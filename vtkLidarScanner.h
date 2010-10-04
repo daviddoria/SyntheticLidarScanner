@@ -16,9 +16,11 @@ The angle in the "XY" (forward-right) plane (a rotation around Z), measured from
 
 Phi:
 The elevation angle, in the YZ (forward-up) plane (a rotation around X), measured from +y. It's range is -pi/2 (down) to pi/2 (up). This is obtained by rotating around the "right" axis (AFTER the new right axis is obtained by setting Theta).
+
+The output is a vtkImageData. The scalars are the color values. A ValidArray is attached to the PointData to indicate which returns were valid. A CoordinateArray stores on the PointData stores the coordinates of the returns. An Intensity array stores the intensities of each return.
 */
 
-#include "vtkPolyDataAlgorithm.h" //superclass
+#include "vtkImageAlgorithm.h"
 #include "vtkSmartPointer.h"
 
 class vtkPolyData;
@@ -32,11 +34,13 @@ template <typename T> class vtkDenseArray;
 class vtkRay;
 class vtkLidarPoint;
 
-class vtkLidarScanner : public vtkPolyDataAlgorithm
+#include <vector>
+
+class vtkLidarScanner : public vtkImageAlgorithm
 {
 public:
   static vtkLidarScanner *New();
-  vtkTypeMacro(vtkLidarScanner,vtkObject);
+  vtkTypeMacro(vtkLidarScanner,vtkImageAlgorithm);
   void PrintSelf(ostream &os, vtkIndent indent);
 
   vtkGetMacro(NumberOfThetaPoints, unsigned int);
@@ -82,7 +86,7 @@ public:
   vtkRay* GetRay(const double theta, const double phi) const;
 
   //////////////Functions///////////
-  bool AcquirePoint(const unsigned int thetaIndex, const unsigned int phiIndex); //do a single ray/scene intersection
+  void AcquirePoint(const unsigned int thetaIndex, const unsigned int phiIndex); //do a single ray/scene intersection
 
   void PerformScan(); //actually do all of the ray/scene intersections
 
@@ -102,8 +106,10 @@ protected:
   vtkLidarScanner();
   ~vtkLidarScanner();
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *); //the function that makes this class work with the vtk pipeline
-
-private:
+  int FillInputPortInformation( int port, vtkInformation* info );
+  
+  void ConstructOutput();
+  
   static const double Forward[3]; //the direction of the "default" scanner
   static double Origin[3];
 
@@ -114,8 +120,8 @@ private:
   double MinThetaAngle; //theta angle of the first strip (radians)
   double MaxThetaAngle; //theta angle of the last strip (radians)
 
-  vtkstd::vector<double> PhiAngles; // a list of the phi angles
-  vtkstd::vector<double> ThetaAngles;// a list of the theta angles
+  std::vector<double> PhiAngles; // a list of the phi angles
+  std::vector<double> ThetaAngles;// a list of the theta angles
 
   vtkSmartPointer<vtkTransform> Transform; //the transformation to take the scanner from its default orientation and position to the correction orientation and position
 
@@ -123,10 +129,12 @@ private:
   bool CreateMesh;
   double MaxMeshEdgeLength;
 
-  //vtkstd::vector<vtkstd::vector<vtkLidarPoint*> > OutputGrid; //outer vector is size NumberOfThetaPoints, inner vector is size NumberOfPhiPoints
-  //vtkDenseArray<vtkLidarPoint*>* OutputGrid; //outer vector is size NumberOfThetaPoints, inner vector is size NumberOfPhiPoints
-  //vtkDenseArray<vtkSmartPointer<vtkLidarPoint> >* OutputGrid; //outer vector is size NumberOfThetaPoints, inner vector is size NumberOfPhiPoints
-  vtkSmartPointer<vtkDenseArray<vtkSmartPointer<vtkLidarPoint> > > OutputGrid; //outer vector is size NumberOfThetaPoints, inner vector is size NumberOfPhiPoints
+  // This ImageData stores the colors as the Scalars, and has multiple PointData
+  // arrays which contain the rest of the scan information
+  vtkSmartPointer<vtkImageData> Output;
+
+  vtkSmartPointer<vtkDenseArray<vtkRay*> > RayGrid;
+  vtkSmartPointer<vtkDenseArray<vtkLidarPoint*> > Scan;
 
   double LOSVariance;
   double OrthogonalVariance;

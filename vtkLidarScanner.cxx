@@ -5,6 +5,7 @@
 #include "vtkLidarScanner.h"
 
 #include "vtkSmartPointer.h"
+#include "vtkImageData.h"
 #include "vtkConeSource.h"
 #include "vtkObjectFactory.h"
 #include "vtkIdList.h"
@@ -31,7 +32,7 @@
 
 vtkStandardNewMacro(vtkLidarScanner);
 
-//The scanner transform is relative to the coordinate system described at the top of the header file. We need only the Forward vector.
+// The scanner transform is relative to the coordinate system described at the top of the header file. We need only the Forward vector.
 const double vtkLidarScanner::Forward[3] = {0.0, 1.0, 0.0};
 double vtkLidarScanner::Origin[3] = {0.0, 0.0, 0.0};
 
@@ -44,11 +45,9 @@ double vtkLidarScanner::GetNumberOfTotalPoints() const {return NumberOfPhiPoints
 vtkLidarScanner::vtkLidarScanner()
 {
   // Initialze everything to NULL/zero values
-  this->Transform = vtkSmartPointer<vtkTransform>::New(); //vtkTransform is identity by default
-  //this->Transform = NULL;
+  this->Transform = vtkSmartPointer<vtkTransform>::New(); //vtkTransform is initialized to identity by default
 
-  //this->OutputGrid = vtkDenseArray<vtkLidarPoint*>::New();
-  this->OutputGrid = vtkSmartPointer<vtkDenseArray<vtkSmartPointer<vtkLidarPoint> > >::New();
+  this->Output = vtkSmartPointer<vtkImageData>::New();
 
   this->NumberOfThetaPoints = 0;
   this->NumberOfPhiPoints = 0;
@@ -57,7 +56,7 @@ vtkLidarScanner::vtkLidarScanner()
   this->MinPhiAngle = 0.0;
   this->MaxPhiAngle = 0.0;
 
-  //Noise mode: noiseless unless specified
+  // Noiseless unless specified
   this->LOSVariance = 0.0;
   this->OrthogonalVariance = 0.0;
 
@@ -70,7 +69,26 @@ vtkLidarScanner::vtkLidarScanner()
   this->MaxMeshEdgeLength = std::numeric_limits<double>::infinity();
 
   this->Scene = vtkSmartPointer<vtkPolyData>::New();
+
+  //this->RayGrid = vtkSmartPointer<vtkDenseArray<vtkRay*> >::New();
+  this->Scan = vtkSmartPointer<vtkDenseArray<vtkLidarPoint*> >::New();
+
+
 }
+
+int vtkLidarScanner::FillInputPortInformation( int port, vtkInformation* info )
+{
+  if(port == 0)
+    {
+    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData" );
+    info->Set(vtkAlgorithm::INPUT_IS_REPEATABLE(), 1);
+    return 1;
+    }
+
+  vtkErrorMacro("This filter does not have more than 1 input port!");
+  return 0;
+}
+ 
 
 vtkLidarScanner::~vtkLidarScanner()
 {
@@ -227,7 +245,7 @@ int vtkLidarScanner::RequestData(vtkInformation *vtkNotUsed(request),
   // Get the input and ouptut
   vtkPolyData *input = vtkPolyData::SafeDownCast(
           inInfo->Get(vtkDataObject::DATA_OBJECT()));
-  vtkPolyData *output = vtkPolyData::SafeDownCast(
+  vtkImageData *output = vtkImageData::SafeDownCast(
           outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   std::cout << "input to vtkLidarScanner has " << input->GetNumberOfPoints() << " points." << std::endl;
@@ -236,6 +254,9 @@ int vtkLidarScanner::RequestData(vtkInformation *vtkNotUsed(request),
 
   this->PerformScan();
 
+  ConstructOutput();
+
+  /*
   if(this->CreateMesh)
     {
     this->GetOutputMesh(output);
@@ -244,70 +265,103 @@ int vtkLidarScanner::RequestData(vtkInformation *vtkNotUsed(request),
     {
     this->GetValidOutputPoints(output);
     }
+  */
 
   return 1;
 }
 
-bool vtkLidarScanner::AcquirePoint(const unsigned int ThetaIndex, const unsigned int PhiIndex)
+void vtkLidarScanner::ConstructOutput()
+{
+  vtkSmartPointer<vtkDoubleArray> coordinateArray =
+    vtkSmartPointer<vtkDoubleArray>::New();
+  coordinateArray->SetNumberOfComponents(3);
+  coordinateArray->SetNumberOfTuples(this->NumberOfPhiPoints * this->NumberOfThetaPoints);
+  
+  vtkSmartPointer<vtkDoubleArray> normalArray =
+    vtkSmartPointer<vtkDoubleArray>::New();
+  normalArray->SetNumberOfComponents(3);
+  normalArray->SetNumberOfTuples(this->NumberOfPhiPoints * this->NumberOfThetaPoints);
+  
+  vtkSmartPointer<vtkIntArray> validArray =
+    vtkSmartPointer<vtkIntArray>::New();
+  validArray->SetNumberOfComponents(1);
+  validArray->SetNumberOfTuples(this->NumberOfPhiPoints * this->NumberOfThetaPoints);
+
+  for(unsigned int phi = 0; phi < this->NumberOfPhiPoints; phi++)
+    {
+    for(unsigned int theta = 0; theta < this->NumberOfThetaPoints; theta++)
+      {
+      int ijk[3] = {0,0,0};
+      ijk[0] = phi;
+      ijk[1] = theta;
+      vtkIdType index = this->Output->ComputePointId(ijk);
+
+      double coordinate[3];
+      this->Scan->GetValue(phi, theta)->GetCoordinate(coordinate);
+      coordinateArray->SetTupleValue(index, coordinate);
+
+      double normal[3];
+      this->Scan->GetValue(phi, theta)->GetCoordinate(normal);
+      normalArray->SetTupleValue(index, normal);
+
+      validArray->SetValue(index, this->Scan->GetValue(phi, theta)->GetHit());
+      }
+    }
+  
+}
+
+void vtkLidarScanner::AcquirePoint(const unsigned int thetaIndex, const unsigned int phiIndex)
 {
   // This function performs a ray/mesh intersection of the ray at the specified grid location
 
   // The grid location must be in bounds.
-  if(ThetaIndex >= NumberOfThetaPoints || PhiIndex >= NumberOfPhiPoints)
+  if(thetaIndex >= this->NumberOfThetaPoints || phiIndex >= this->NumberOfPhiPoints)
     {
-      vtkstd::cout << "Out of range!" << vtkstd::endl;
-      return false;
+    std::cout << "Out of range!" << std::endl;
+    exit(-1);
     }
 
   // We have computed the grid of rays (in MakeSphericalGrid()) relative to a "default" scanner (i.e. Forward = (0,1,0))
   // so we have to apply the scanner's transform to the ray before casting it
-  vtkRay* Ray = OutputGrid->GetValue(PhiIndex,ThetaIndex)->GetRay();
-  Ray->ApplyTransform(this->Transform);
+  vtkRay* ray = this->RayGrid->GetValue(phiIndex, thetaIndex);
+  ray->ApplyTransform(this->Transform);
 
   double t;
   double x[3];
   double pcoords[3];
   int subId;
   vtkIdType cellId;
-  int hit = this->Tree->IntersectWithLine(Ray->GetOrigin(), Ray->GetPointAlong(1000.0), .01, t, x, pcoords, subId, cellId);
-  /*
-  std::cout << "t: " << t << std::endl;
-  std::cout << "x: " << x[0] << " " << x[1] << " " << x[2] << std::endl;
-  std::cout << "pcoords: " << pcoords[0] << " " << pcoords[1] << " " << pcoords[2] << std::endl;
-  std::cout << "subId: " << subId << std::endl;
-  std::cout << "cellId: " << cellId << std::endl;
-  */
+  int hit = this->Tree->IntersectWithLine(ray->GetOrigin(), ray->GetPointAlong(1000.0), .01, t, x, pcoords, subId, cellId);
 
-  // the ray does not intersect the mesh at all, we can stop here
+  // The ray does not intersect the mesh at all, we can stop here
   if(!hit)
     {
-    return false;
+    return;
     }
 
-  vtkTriangle* Tri = vtkTriangle::SafeDownCast(this->Scene->GetCell(cellId));
-  vtkPoints* TriPoints = Tri->GetPoints();
+  vtkPoints* triPoints = vtkTriangle::SafeDownCast(this->Scene->GetCell(cellId))->GetPoints();
 
   double n[3];
   double t0[3];
   double t1[3];
   double t2[3];
 
-  TriPoints->GetPoint(0, t0);
-  TriPoints->GetPoint(1, t1);
-  TriPoints->GetPoint(2, t2);
+  triPoints->GetPoint(0, t0);
+  triPoints->GetPoint(1, t1);
+  triPoints->GetPoint(2, t2);
   vtkTriangle::ComputeNormal(t0, t1, t2, n);
 
-  //save the coordinate of the intersection and the normal of the triangle that was intersected in the grid
-  OutputGrid->GetValue(PhiIndex,ThetaIndex)->SetCoordinate(x);
-  OutputGrid->GetValue(PhiIndex, ThetaIndex)->SetNormal(n);
+  // Save the intersection
+  this->Scan->GetValue(phiIndex,thetaIndex)->SetCoordinate(x);
 
-  //set the flag for this point indicating that there was a valid intersection
-  OutputGrid->GetValue(PhiIndex, ThetaIndex)->SetHit(true);
+  // Save the normal of the intersection
+  this->Scan->GetValue(phiIndex, thetaIndex)->SetNormal(n);
 
-  this->AddNoise(OutputGrid->GetValue(PhiIndex, ThetaIndex));
+  // Set the flag for this point indicating that there was a valid intersection
+  this->Scan->GetValue(phiIndex, thetaIndex)->SetHit(true);
 
-  //return if this ray had a valid intersection with the scene
-  return OutputGrid->GetValue(PhiIndex, ThetaIndex)->GetHit();
+  this->AddNoise(Scan->GetValue(phiIndex, thetaIndex));
+
 }
 
 
@@ -331,59 +385,48 @@ void vtkLidarScanner::MakeSphericalGrid()
   // Make a uniformly spaced spherical grid assuming a scanner position of (0,0,0) and facing Forward (0, 1, 0).
   // This grid will later be traversed and the ray at each position will be cast into the scene to look for valid intersections.
   // (the rays will be transformed using the scanner Transform so that they come from the scanner in its current orientation)
-
+  // This function also initializes all of the vtkLidarPoint's in the Scan grid
+  
   // Size the grid
-  // Set the number of columns
-  this->OutputGrid->Resize(this->NumberOfPhiPoints, this->NumberOfThetaPoints);
+  this->Scan->Resize(this->NumberOfPhiPoints, this->NumberOfThetaPoints);
 
   for(unsigned int thetaCounter = 0; thetaCounter < NumberOfThetaPoints; thetaCounter++)
     {
     for(unsigned int phiCounter = 0; phiCounter < NumberOfPhiPoints; phiCounter++)
       {
-      //compute the (phi,theta) coordinate for the current grid location
+      // Compute the (phi,theta) coordinate for the current grid location
       double phi = this->MinPhiAngle + phiCounter * this->GetPhiStep();
       double theta = this->MinThetaAngle + thetaCounter * this->GetThetaStep();
 
-      //convert the spherical coordinates into a cartesian direction
+      // Convert the spherical coordinates into a cartesian direction
       vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-      //caution - these VTK functions take parameters in degrees!
+      // Caution - these VTK functions take parameters in degrees!
       transform->RotateZ(-theta*180./vtkMath::Pi()); //the negative is to obtain the coordinate system we defined
       transform->RotateX(phi*180./vtkMath::Pi());
       double* rayDir = transform->TransformPoint(this->Forward);
 
-      //construct a ray
+      // Construct a ray
       vtkSmartPointer<vtkRay> ray = vtkSmartPointer<vtkRay>::New();
 
       ray->SetOrigin(this->Origin);
       ray->SetDirection(rayDir);
 
-      //vtkstd::cout << *Ray << vtkstd::endl;
-
-      //construct a vtkLidarPoint to store in the grid and set its ray to the ray that was just computed
       vtkSmartPointer<vtkLidarPoint> lidarPoint =
-          vtkSmartPointer<vtkLidarPoint>::New();
+        vtkSmartPointer<vtkLidarPoint>::New();
       lidarPoint->SetRay(ray);
-
-      //vtkstd::cout << *(LidarPoint->GetRay()) << vtkstd::endl;
-
-      //store the point in the grid
-      this->OutputGrid->SetValue(phiCounter, thetaCounter, lidarPoint);
-
-      //vtkstd::cout << *(this->OutputGrid->GetValue(0,0)->GetRay()) << vtkstd::endl;
-
+      
+      // Store the ray in the grid
+      this->Scan->SetValue(phiCounter, thetaCounter, lidarPoint);
 
       } // end phi loop
 
     } //end theta loop
 
-  //std::cout << *(this->OutputGrid->GetValue(0,0)) << std::endl;
-  //std::cout << *(this->OutputGrid->GetValue(0,0)->GetRay()) << std::endl;
-
 }
 
 void vtkLidarScanner::GetOutputMesh(vtkPolyData* output)
 {
-  // std::cout << "GetOutputMesh" << vtkstd::endl;
+  // std::cout << "GetOutputMesh" << std::endl;
   // This function connects the raw points output into a mesh using the connectivity
   // information from the known point acquisition order. The result is stored in 'output'.
 
