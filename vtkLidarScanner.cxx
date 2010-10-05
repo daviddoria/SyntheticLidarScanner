@@ -88,7 +88,7 @@ int vtkLidarScanner::FillInputPortInformation( int port, vtkInformation* info )
   vtkErrorMacro("This filter does not have more than 1 input port!");
   return 0;
 }
- 
+
 
 vtkLidarScanner::~vtkLidarScanner()
 {
@@ -276,12 +276,12 @@ void vtkLidarScanner::ConstructOutput()
     vtkSmartPointer<vtkDoubleArray>::New();
   coordinateArray->SetNumberOfComponents(3);
   coordinateArray->SetNumberOfTuples(this->NumberOfPhiPoints * this->NumberOfThetaPoints);
-  
+
   vtkSmartPointer<vtkDoubleArray> normalArray =
     vtkSmartPointer<vtkDoubleArray>::New();
   normalArray->SetNumberOfComponents(3);
   normalArray->SetNumberOfTuples(this->NumberOfPhiPoints * this->NumberOfThetaPoints);
-  
+
   vtkSmartPointer<vtkIntArray> validArray =
     vtkSmartPointer<vtkIntArray>::New();
   validArray->SetNumberOfComponents(1);
@@ -307,7 +307,7 @@ void vtkLidarScanner::ConstructOutput()
       validArray->SetValue(index, this->Scan->GetValue(phi, theta)->GetHit());
       }
     }
-  
+
 }
 
 void vtkLidarScanner::AcquirePoint(const unsigned int thetaIndex, const unsigned int phiIndex)
@@ -386,7 +386,7 @@ void vtkLidarScanner::MakeSphericalGrid()
   // This grid will later be traversed and the ray at each position will be cast into the scene to look for valid intersections.
   // (the rays will be transformed using the scanner Transform so that they come from the scanner in its current orientation)
   // This function also initializes all of the vtkLidarPoint's in the Scan grid
-  
+
   // Size the grid
   this->Scan->Resize(this->NumberOfPhiPoints, this->NumberOfThetaPoints);
 
@@ -414,7 +414,7 @@ void vtkLidarScanner::MakeSphericalGrid()
       vtkSmartPointer<vtkLidarPoint> lidarPoint =
         vtkSmartPointer<vtkLidarPoint>::New();
       lidarPoint->SetRay(ray);
-      
+
       // Store the ray in the grid
       this->Scan->SetValue(phiCounter, thetaCounter, lidarPoint);
 
@@ -443,7 +443,7 @@ void vtkLidarScanner::GetOutputMesh(vtkPolyData* output)
     //for(unsigned int phi = 0; phi < OutputGrid[0].size(); phi++ )
     for(unsigned int phi = 0; phi < this->NumberOfPhiPoints; phi++ )
       {
-      if(this->OutputGrid->GetValue(phi,theta)->GetHit())
+      if(this->Scan->GetValue(phi,theta)->GetHit())
         {
         points2D->InsertNextPoint(theta, phi, 0);
         PointCounter++;
@@ -564,15 +564,15 @@ void vtkLidarScanner::GetValidOutputPoints(vtkPolyData* output)
     for(unsigned int phiCounter = 0; phiCounter < NumberOfPhiPoints; phiCounter++)
       {
       // If the ray in this grid location had a valid scene intersection
-      if(this->OutputGrid->GetValue(phiCounter, thetaCounter)->GetHit())
+      if(this->Scan->GetValue(phiCounter, thetaCounter)->GetHit())
         {
         //set the next element in the geometry/topology/normal vector
-        double* p = OutputGrid->GetValue(phiCounter, thetaCounter)->GetCoordinate();
+        double* p = this->Scan->GetValue(phiCounter, thetaCounter)->GetCoordinate();
         vtkIdType pid[1];
         pid[0] = Points->InsertNextPoint(p);
         Vertices->InsertNextCell(1,pid);
 
-        norms->InsertNextTupleValue(OutputGrid->GetValue(phiCounter, thetaCounter)->GetNormal());
+        norms->InsertNextTupleValue(this->Scan->GetValue(phiCounter, thetaCounter)->GetNormal());
 
         if(StoreRays)
           {
@@ -588,7 +588,7 @@ void vtkLidarScanner::GetValidOutputPoints(vtkPolyData* output)
         if(StoreRays)
           {
           // Set the next element in the geometry/topology/normal vector
-          vtkRay* R = OutputGrid->GetValue(phiCounter, thetaCounter)->GetRay();
+          vtkRay* R = this->Scan->GetValue(phiCounter, thetaCounter)->GetRay();
           double* p = R->GetPointAlong(1.0);
           vtkIdType pid[1];
           pid[0] = Points->InsertNextPoint(p);
@@ -643,12 +643,12 @@ void vtkLidarScanner::GetAllOutputPoints(vtkPolyData* output)
       {
       // If the ray in this grid location had a valid scene intersection
 
-      double* p = OutputGrid->GetValue(phi, theta)->GetCoordinate();
+      double* p = this->Scan->GetValue(phi, theta)->GetCoordinate();
       points->InsertNextPoint(p);
 
-      normals->InsertNextTupleValue(OutputGrid->GetValue(phi, theta)->GetNormal());
+      normals->InsertNextTupleValue(this->Scan->GetValue(phi, theta)->GetNormal());
 
-      validArray->InsertNextValue(this->OutputGrid->GetValue(phi, theta)->GetHit());
+      validArray->InsertNextValue(this->Scan->GetValue(phi, theta)->GetHit());
     }//end phi loop
   } //end theta loop
 
@@ -863,44 +863,69 @@ void vtkLidarScanner::CreateRepresentation(vtkPolyData* representation)
   transformFilter->SetInputConnection(coneSource->GetOutputPort());
   transformFilter->Update();
 
-  vtkPoints* points = transformFilter->GetOutput()->GetPoints();
+  vtkSmartPointer<vtkPoints> points =
+    vtkSmartPointer<vtkPoints>::New();
+  double tip[3];
+  transformFilter->GetOutput()->GetPoints()->GetPoint(0,tip);
+
+  points->InsertNextPoint(tip);
 
   // Point id: location
   // 0: tip (cone is looking from tip to base down the -x axis
   // 1: (+x, +z)
   double topRight[3];
-  points->GetPoint(1, topRight);
+  transformFilter->GetOutput()->GetPoints()->GetPoint(1, topRight);
 
   // 2: (-x, +z)
   double topLeft[3];
-  points->GetPoint(2, topLeft);
+  transformFilter->GetOutput()->GetPoints()->GetPoint(2, topLeft);
 
   // 3: (-x, -z)
   double bottomLeft[3];
-  points->GetPoint(3, bottomLeft);
+  transformFilter->GetOutput()->GetPoints()->GetPoint(3, bottomLeft);
 
   // 4: (+x, -z)
   double bottomRight[3];
-  points->GetPoint(4, bottomRight);
+  transformFilter->GetOutput()->GetPoints()->GetPoint(4, bottomRight);
 
   // Set the left/right (theta) angles
   // Moving points topLeft and bottomLeft (left, minThetaAngle) or topRight and bottomRight (right, maxThetaAngle) +/- x does this
-  topLeft[0] = this->RepresentationLength * sign(MinThetaAngle) * tan(vtkMath::RadiansFromDegrees(MinThetaAngle));
-  bottomLeft[0] = this->RepresentationLength * sign(MinThetaAngle) * tan(vtkMath::RadiansFromDegrees(MinThetaAngle));
+  topLeft[0] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MinThetaAngle));
+  bottomLeft[0] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MinThetaAngle));
 
-  topRight[0] = this->RepresentationLength * sign(MaxThetaAngle) * tan(vtkMath::RadiansFromDegrees(MaxThetaAngle));
-  bottomRight[0] = this->RepresentationLength * sign(MaxThetaAngle) * tan(vtkMath::RadiansFromDegrees(MaxThetaAngle));
+  topRight[0] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MaxThetaAngle));
+  bottomRight[0] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MaxThetaAngle));
 
   // Set the up/down (phi) angles
   // Moving points topLeft and topRight (top, maxPhiAngle) or bottomLeft and bottomRight (bottom, minPhiAngle) +/- z does this
-  topLeft[2] = this->RepresentationLength * sign(MaxPhiAngle) * tan(vtkMath::RadiansFromDegrees(MaxPhiAngle));
-  topRight[2] = this->RepresentationLength * sign(MaxPhiAngle) * tan(vtkMath::RadiansFromDegrees(MaxPhiAngle));
+  topLeft[2] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MaxPhiAngle));
+  topRight[2] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MaxPhiAngle));
 
-  bottomLeft[2] = this->RepresentationLength * sign(MinPhiAngle) * tan(vtkMath::RadiansFromDegrees(MinPhiAngle));
-  bottomRight[2] = this->RepresentationLength * sign(MinPhiAngle) * tan(vtkMath::RadiansFromDegrees(MinPhiAngle));
+  bottomLeft[2] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MinPhiAngle));
+  bottomRight[2] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MinPhiAngle));
+  /*
+  std::cout << "MinThetaAngle: " << this->MinThetaAngle << std::endl;
+  std::cout << "sign of MinThetaAngle: " << sign(this->MinThetaAngle) << std::endl;
 
-  representation->ShallowCopy(transformFilter->GetOutput());
+  std::cout << "MaxThetaAngle: " << this->MaxThetaAngle << std::endl;
+  std::cout << "sign of MaxThetaAngle: " << sign(this->MaxThetaAngle) << std::endl;
 
+  std::cout << "topLeft = " << topLeft[0] << " " << topLeft[1] << " " << topLeft[2] << std::endl;
+  std::cout << "topRight = " << topRight[0] << " " << topRight[1] << " " << topRight[2] << std::endl;
+  std::cout << "bottomLeft = " << bottomLeft[0] << " " << bottomLeft[1] << " " << bottomLeft[2] << std::endl;
+  std::cout << "bottomRight = " << bottomRight[0] << " " << bottomRight[1] << " " << bottomRight[2] << std::endl;
+  */
+  points->InsertNextPoint(topRight);
+  points->InsertNextPoint(topLeft);
+  points->InsertNextPoint(bottomLeft);
+  points->InsertNextPoint(bottomRight);
+
+  vtkSmartPointer<vtkPolyData> pd =
+    vtkSmartPointer<vtkPolyData>::New();
+  pd->ShallowCopy(transformFilter->GetOutput());
+  pd->SetPoints(points);
+
+  representation->ShallowCopy(pd);
 }
 
 

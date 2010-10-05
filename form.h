@@ -13,6 +13,7 @@ class vtkPolyDataMapper;
 class vtkBoxWidget2;
 class vtkAxesActor;
 class vtkOrientationMarkerWidget;
+class vtkTransform;
 
 class Form : public QWidget
 {
@@ -39,10 +40,14 @@ private:
   void Refresh();
   void ResetAndRefresh();
 
+  void CreateScannerRepresentation();
+  void HandleBoxWidgetEvent();
+
   vtkSmartPointer<vtkLidarScanner> LidarScanner;
   vtkSmartPointer<vtkPolyData> LidarScannerRepresentation;
   vtkSmartPointer<vtkPolyDataMapper> LidarScannerMapper;
   vtkSmartPointer<vtkActor> LidarScannerActor;
+  vtkSmartPointer<vtkTransform> LidarScannerTransform;
 
   vtkSmartPointer<vtkRenderer> Renderer;
 
@@ -54,7 +59,7 @@ private:
   vtkSmartPointer<vtkActor> ScanActor;
   vtkSmartPointer<vtkPolyDataMapper> ScanMapper;
 
-  vtkSmartPointer<vtkBoxWidget2> boxWidget;
+  vtkSmartPointer<vtkBoxWidget2> BoxWidget;
 
   vtkSmartPointer<vtkAxesActor> OrientationAxes;
   vtkSmartPointer<vtkOrientationMarkerWidget> OrientationWidget;
