@@ -31,6 +31,7 @@
 #include <vtkAxesActor.h>
 
 #include "vtkLidarScanner.h"
+#include "ScannerInteractorStyle.h"
 
 #include <sstream>
 
@@ -51,29 +52,14 @@ Form::Form(int numArgs, char** args, QWidget *parent)
   this->argc = numArgs;
   this->argv = args;
 
-  this->LidarScanner = vtkSmartPointer<vtkLidarScanner>::New();
-  this->LidarScannerRepresentation = vtkSmartPointer<vtkPolyData>::New();
-  this->LidarScannerMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  this->LidarScannerActor = vtkSmartPointer<vtkActor>::New();
-  this->LidarScannerTransform = vtkSmartPointer<vtkTransform>::New();
+  this->ScannerStyle = vtkSmartPointer<ScannerInteractorStyle>::New();
+  this->ui.qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(this->ScannerStyle);
+  this->ScannerStyle->SetCurrentRenderer(this->ui.qvtkWidget->GetRenderWindow()
+                    ->GetInteractor()->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
 
   this->Renderer = vtkSmartPointer<vtkRenderer>::New();
 
-  this->Scene = vtkSmartPointer<vtkPolyData>::New();
-  this->SceneActor = vtkSmartPointer<vtkActor>::New();
-  this->SceneMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 
-  this->Scan = vtkSmartPointer<vtkPolyData>::New();
-  this->ScanActor = vtkSmartPointer<vtkActor>::New();
-  this->ScanMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-
-  this->BoxWidget = vtkSmartPointer<vtkBoxWidget2>::New();
-
-  // Orientation widget
-  this->OrientationAxes = vtkSmartPointer<vtkAxesActor>::New();
-  this->OrientationWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
-  this->OrientationWidget->SetOrientationMarker(this->OrientationAxes);
-  this->OrientationWidget->SetViewport( 0.0, 0.0, 0.4, 0.4 );
 
   ui.setupUi(this);
 
@@ -91,16 +77,6 @@ Form::Form(int numArgs, char** args, QWidget *parent)
   this->ConnectSlots();
 
   this->ui.qvtkWidget->GetRenderWindow()->AddRenderer(this->Renderer);
-
-  this->BoxWidget->SetInteractor(this->ui.qvtkWidget->GetRenderWindow()->GetInteractor());
-  this->BoxWidget->On();
-
-  this->OrientationWidget->SetInteractor(this->ui.qvtkWidget->GetRenderWindow()->GetInteractor());
-  this->OrientationWidget->On();
-
-  //this->boxWidget->ScalingEnabledOff();
-  vtkBoxRepresentation::SafeDownCast(this->BoxWidget->GetRepresentation())->HandlesOff();
-
 
   //this->ui.qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle( this->Style);
 
@@ -135,33 +111,34 @@ void Form::btnScan_clicked()
   // Set the scan parameters
   //this->LidarScanner->SetPhiSpan(phiSpan);
   //this->LidarScanner->SetThetaSpan(thetaSpan);
-  this->LidarScanner->SetMinPhiAngle(this->ui.txtMinPhiAngle->text().toDouble());
+  this->ScannerStyle->LidarScanner->SetMinPhiAngle(this->ui.txtMinPhiAngle->text().toDouble());
 
-  this->LidarScanner->SetMaxPhiAngle(this->ui.txtMaxPhiAngle->text().toDouble());
+  this->ScannerStyle->LidarScanner->SetMaxPhiAngle(this->ui.txtMaxPhiAngle->text().toDouble());
 
-  this->LidarScanner->SetMinThetaAngle(this->ui.txtMinThetaAngle->text().toDouble());
+  this->ScannerStyle->LidarScanner->SetMinThetaAngle(this->ui.txtMinThetaAngle->text().toDouble());
 
-  this->LidarScanner->SetMaxThetaAngle(this->ui.txtMaxThetaAngle->text().toDouble());
+  this->ScannerStyle->LidarScanner->SetMaxThetaAngle(this->ui.txtMaxThetaAngle->text().toDouble());
 
-  this->LidarScanner->SetNumberOfThetaPoints(this->ui.txtNumberOfThetaPoints->text().toUInt());
+  this->ScannerStyle->LidarScanner->SetNumberOfThetaPoints(this->ui.txtNumberOfThetaPoints->text().toUInt());
 
-  this->LidarScanner->SetNumberOfPhiPoints(this->ui.txtNumberOfPhiPoints->text().toUInt());
+  this->ScannerStyle->LidarScanner->SetNumberOfPhiPoints(this->ui.txtNumberOfPhiPoints->text().toUInt());
 
-  //this->LidarScanner->SetTransform(transform);
+  //this->ScannerStyle->LidarScanner->SetTransform(transform);
 
-  this->LidarScanner->MakeSphericalGrid(); //indicate to use uniform spherical spacing
+  this->ScannerStyle->LidarScanner->MakeSphericalGrid(); //indicate to use uniform spherical spacing
 
   //this->LidarScanner->SetCreateMesh(createMesh); // run delaunay on the resulting points?
 
-  this->LidarScanner->SetInputConnection(this->Scene->GetProducerPort());
-  this->LidarScanner->Update();
+  this->ScannerStyle->LidarScanner->SetInputConnection(this->ScannerStyle->Scene->GetProducerPort());
+  this->ScannerStyle->LidarScanner->Update();
 
-  this->LidarScanner->GetAllOutputPoints(this->Scan);
+  this->ScannerStyle->LidarScanner->GetAllOutputPoints(this->ScannerStyle->Scan);
 
   // Setup the visualization
-  this->ScanMapper->SetInputConnection(this->Scan->GetProducerPort());
-  this->ScanActor->SetMapper(this->ScanMapper);
-  this->Renderer->AddActor(this->ScanActor);
+  this->ScannerStyle->ScanMapper->SetInputConnection(this->ScannerStyle->Scan->GetProducerPort());
+  this->ScannerStyle->ScanActor->SetMapper(this->ScannerStyle->ScanMapper);
+
+  this->Renderer->AddActor(this->ScannerStyle->ScanActor);
 
   this->Refresh();
 
@@ -178,38 +155,38 @@ void Form::btnSaveScan_clicked()
 
 void Form::CreateScannerRepresentation()
 {
-  this->LidarScanner->SetMinThetaAngle(vtkMath::RadiansFromDegrees(this->ui.txtMinThetaAngle->text().toDouble()));
-  this->LidarScanner->SetMaxThetaAngle(vtkMath::RadiansFromDegrees(this->ui.txtMaxThetaAngle->text().toDouble()));
+  this->ScannerStyle->LidarScanner->SetMinThetaAngle(vtkMath::RadiansFromDegrees(this->ui.txtMinThetaAngle->text().toDouble()));
+  this->ScannerStyle->LidarScanner->SetMaxThetaAngle(vtkMath::RadiansFromDegrees(this->ui.txtMaxThetaAngle->text().toDouble()));
 
-  this->LidarScanner->SetMinPhiAngle(vtkMath::RadiansFromDegrees(this->ui.txtMinPhiAngle->text().toDouble()));
-  this->LidarScanner->SetMaxPhiAngle(vtkMath::RadiansFromDegrees(this->ui.txtMaxPhiAngle->text().toDouble()));
+  this->ScannerStyle->LidarScanner->SetMinPhiAngle(vtkMath::RadiansFromDegrees(this->ui.txtMinPhiAngle->text().toDouble()));
+  this->ScannerStyle->LidarScanner->SetMaxPhiAngle(vtkMath::RadiansFromDegrees(this->ui.txtMaxPhiAngle->text().toDouble()));
 
-  this->LidarScanner->SetNumberOfThetaPoints(vtkMath::RadiansFromDegrees(this->ui.txtNumberOfThetaPoints->text().toDouble()));
-  this->LidarScanner->SetNumberOfPhiPoints(vtkMath::RadiansFromDegrees(this->ui.txtNumberOfPhiPoints->text().toDouble()));
+  this->ScannerStyle->LidarScanner->SetNumberOfThetaPoints(vtkMath::RadiansFromDegrees(this->ui.txtNumberOfThetaPoints->text().toDouble()));
+  this->ScannerStyle->LidarScanner->SetNumberOfPhiPoints(vtkMath::RadiansFromDegrees(this->ui.txtNumberOfPhiPoints->text().toDouble()));
 
-  this->LidarScanner->SetRepresentationLength(10);
+  this->ScannerStyle->LidarScanner->SetRepresentationLength(10);
 
   vtkSmartPointer<vtkPolyData> temp =
     vtkSmartPointer<vtkPolyData>::New();
-  this->LidarScanner->CreateRepresentation(temp);
+  this->ScannerStyle->LidarScanner->CreateRepresentation(temp);
 
   vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter =
     vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-  transformFilter->SetTransform(this->LidarScannerTransform);
+  transformFilter->SetTransform(this->ScannerStyle->LidarScannerTransform);
   transformFilter->SetInputConnection(temp->GetProducerPort());
   transformFilter->Update();
 
-  this->LidarScannerRepresentation->ShallowCopy(transformFilter->GetOutput());
+  this->ScannerStyle->LidarScannerRepresentation->ShallowCopy(transformFilter->GetOutput());
 }
 
 void Form::btnPreview_clicked()
 {
   CreateScannerRepresentation();
 
-  this->LidarScannerMapper->SetInputConnection(this->LidarScannerRepresentation->GetProducerPort());
-  this->LidarScannerActor->SetMapper(this->LidarScannerMapper);
+  this->ScannerStyle->LidarScannerMapper->SetInputConnection(this->ScannerStyle->LidarScannerRepresentation->GetProducerPort());
+  this->ScannerStyle->LidarScannerActor->SetMapper(this->ScannerStyle->LidarScannerMapper);
 
-  this->Renderer->AddActor(this->LidarScannerActor);
+  this->Renderer->AddActor(this->ScannerStyle->LidarScannerActor);
 
   this->Refresh();
 
@@ -234,25 +211,12 @@ void Form::btnOpenFile_clicked()
   reader->Update();
 
   // Store the data as the scene
-  this->Scene->ShallowCopy(reader->GetOutput());
+  this->ScannerStyle->Scene->ShallowCopy(reader->GetOutput());
 
-  this->SceneMapper->SetInputConnection(this->Scene->GetProducerPort());
-  this->SceneActor->SetMapper(this->SceneMapper);
-  this->Renderer->AddActor(this->SceneActor);
+  this->ScannerStyle->SceneMapper->SetInputConnection(this->ScannerStyle->Scene->GetProducerPort());
+  this->ScannerStyle->SceneActor->SetMapper(this->ScannerStyle->SceneMapper);
+  this->Renderer->AddActor(this->ScannerStyle->SceneActor);
 
   this->ResetAndRefresh();
 
-}
-
-void Form::HandleBoxWidgetEvent()
-{
-//  vtkBoxRepresentation::SafeDownCast(box)->GetTransform(this->LidarScannerTransform);
-  CreateScannerRepresentation();
-
-  this->LidarScannerMapper->SetInputConnection(this->LidarScannerRepresentation->GetProducerPort());
-  this->LidarScannerActor->SetMapper(this->LidarScannerMapper);
-
-  this->Renderer->AddActor(this->LidarScannerActor);
-
-  this->Refresh();
 }

@@ -6,14 +6,8 @@
 #include "vtkSmartPointer.h"
 
 class vtkRenderer;
-class vtkPolyData;
-class vtkLidarScanner;
-class vtkActor;
-class vtkPolyDataMapper;
-class vtkBoxWidget2;
-class vtkAxesActor;
-class vtkOrientationMarkerWidget;
-class vtkTransform;
+
+class ScannerInteractorStyle;
 
 class Form : public QWidget
 {
@@ -31,6 +25,7 @@ public slots:
   void btnSaveScan_clicked();
   void btnOpenFile_clicked();
 
+  void CreateScannerRepresentation();
 
 private:
   Ui::Form ui;
@@ -40,29 +35,9 @@ private:
   void Refresh();
   void ResetAndRefresh();
 
-  void CreateScannerRepresentation();
-  void HandleBoxWidgetEvent();
-
-  vtkSmartPointer<vtkLidarScanner> LidarScanner;
-  vtkSmartPointer<vtkPolyData> LidarScannerRepresentation;
-  vtkSmartPointer<vtkPolyDataMapper> LidarScannerMapper;
-  vtkSmartPointer<vtkActor> LidarScannerActor;
-  vtkSmartPointer<vtkTransform> LidarScannerTransform;
-
   vtkSmartPointer<vtkRenderer> Renderer;
 
-  vtkSmartPointer<vtkPolyData> Scene;
-  vtkSmartPointer<vtkActor> SceneActor;
-  vtkSmartPointer<vtkPolyDataMapper> SceneMapper;
-
-  vtkSmartPointer<vtkPolyData> Scan;
-  vtkSmartPointer<vtkActor> ScanActor;
-  vtkSmartPointer<vtkPolyDataMapper> ScanMapper;
-
-  vtkSmartPointer<vtkBoxWidget2> BoxWidget;
-
-  vtkSmartPointer<vtkAxesActor> OrientationAxes;
-  vtkSmartPointer<vtkOrientationMarkerWidget> OrientationWidget;
+  vtkSmartPointer<ScannerInteractorStyle> ScannerStyle;
 
 };
 

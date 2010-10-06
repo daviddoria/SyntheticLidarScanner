@@ -15,6 +15,7 @@ QT4_WRAP_CPP(MOCSrcs form.h)
 
 ADD_EXECUTABLE(SyntheticLidarScanner SyntheticLidarScanner.cpp vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx
 form.cpp
+ScannerInteractorStyle.cxx
 ${MOCSrcs} ${UISrcs}
 )
 TARGET_LINK_LIBRARIES(SyntheticLidarScanner vtkHybrid vtkInfovis vtkViews ${QT_LIBRARIES} QVTK)
