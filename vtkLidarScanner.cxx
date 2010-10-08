@@ -112,12 +112,33 @@ vtkLidarScanner::~vtkLidarScanner()
   */
 }
 
+// Convenience functions for setting values from degrees.
+void vtkLidarScanner::SetMinPhiAngleDegrees(double deg)
+{
+  this->SetMinPhiAngle(vtkMath::RadiansFromDegrees(deg));
+}
+
+void vtkLidarScanner::SetMaxPhiAngleDegrees(double deg)
+{
+  this->SetMaxPhiAngle(vtkMath::RadiansFromDegrees(deg));
+}
+
+void vtkLidarScanner::SetMinThetaAngleDegrees(double deg)
+{
+  this->SetMinThetaAngle(vtkMath::RadiansFromDegrees(deg));
+}
+
+void vtkLidarScanner::SetMaxThetaAngleDegrees(double deg)
+{
+  this->SetMaxThetaAngle(vtkMath::RadiansFromDegrees(deg));
+}
+
 void vtkLidarScanner::SetThetaSpan(const double theta) // (radians)
 {
   // This is a convenience function that simply divides the span by two and evenly splits the span across zero
   if(fabs(theta) > 2.0*vtkMath::Pi())
     {
-    vtkstd::cout << "Error: theta must be in [-2 pi, 2 pi]" << std::endl;
+    std::cout << "Error: theta must be in [-2 pi, 2 pi]" << std::endl;
     }
   else
     {
@@ -890,19 +911,19 @@ void vtkLidarScanner::CreateRepresentation(vtkPolyData* representation)
 
   // Set the left/right (theta) angles
   // Moving points topLeft and bottomLeft (left, minThetaAngle) or topRight and bottomRight (right, maxThetaAngle) +/- x does this
-  topLeft[0] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MinThetaAngle));
-  bottomLeft[0] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MinThetaAngle));
+  topLeft[0] = this->RepresentationLength * tan(this->MinThetaAngle);
+  bottomLeft[0] = this->RepresentationLength * tan(this->MinThetaAngle);
 
-  topRight[0] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MaxThetaAngle));
-  bottomRight[0] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MaxThetaAngle));
+  topRight[0] = this->RepresentationLength * tan(this->MaxThetaAngle);
+  bottomRight[0] = this->RepresentationLength * tan(this->MaxThetaAngle);
 
   // Set the up/down (phi) angles
   // Moving points topLeft and topRight (top, maxPhiAngle) or bottomLeft and bottomRight (bottom, minPhiAngle) +/- z does this
-  topLeft[2] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MaxPhiAngle));
-  topRight[2] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MaxPhiAngle));
+  topLeft[2] = this->RepresentationLength * tan(this->MaxPhiAngle);
+  topRight[2] = this->RepresentationLength * tan(this->MaxPhiAngle);
 
-  bottomLeft[2] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MinPhiAngle));
-  bottomRight[2] = this->RepresentationLength * tan(vtkMath::RadiansFromDegrees(this->MinPhiAngle));
+  bottomLeft[2] = this->RepresentationLength * tan(this->MinPhiAngle);
+  bottomRight[2] = this->RepresentationLength * tan(this->MinPhiAngle);
   /*
   std::cout << "MinThetaAngle: " << this->MinThetaAngle << std::endl;
   std::cout << "sign of MinThetaAngle: " << sign(this->MinThetaAngle) << std::endl;

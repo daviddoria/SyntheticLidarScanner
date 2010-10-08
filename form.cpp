@@ -27,7 +27,6 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkBoxWidget2.h>
-#include <vtkOrientationMarkerWidget.h>
 #include <vtkAxesActor.h>
 
 #include "vtkLidarScanner.h"
@@ -37,6 +36,16 @@
 
 void Form::ConnectSlots()
 {
+  // The text boxes for the angles should update the display
+  connect( this->ui.txtMinThetaAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
+  connect( this->ui.txtMinThetaAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
+  connect( this->ui.txtMaxThetaAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
+  connect( this->ui.txtMaxThetaAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
+  connect( this->ui.txtMinPhiAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
+  connect( this->ui.txtMinPhiAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
+  connect( this->ui.txtMaxPhiAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
+  connect( this->ui.txtMaxPhiAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
+
   connect( this->ui.btnPreview, SIGNAL( clicked() ), this, SLOT(btnPreview_clicked()) );
   connect( this->ui.btnScan, SIGNAL( clicked() ), this, SLOT(btnScan_clicked()) );
 
@@ -52,16 +61,17 @@ Form::Form(int numArgs, char** args, QWidget *parent)
   this->argc = numArgs;
   this->argv = args;
 
+  // This should definitely be called first.
+  ui.setupUi(this);
+
   this->ScannerStyle = vtkSmartPointer<ScannerInteractorStyle>::New();
   this->ui.qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(this->ScannerStyle);
   this->ScannerStyle->SetCurrentRenderer(this->ui.qvtkWidget->GetRenderWindow()
                     ->GetInteractor()->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
+  this->ScannerStyle->SetInteractor(this->ui.qvtkWidget->GetRenderWindow()->GetInteractor());
+  this->ScannerStyle->Initialize();
 
   this->Renderer = vtkSmartPointer<vtkRenderer>::New();
-
-
-
-  ui.setupUi(this);
 
   // GUI initializations
   this->ui.txtMinThetaAngle->setText(QString("-10"));
@@ -106,22 +116,28 @@ void Form::Refresh()
 
 }
 
+void Form::SetScannerParameters()
+{
+  this->ScannerStyle->LidarScanner->SetMinPhiAngleDegrees(this->ui.txtMinPhiAngle->text().toDouble());
+
+  this->ScannerStyle->LidarScanner->SetMaxPhiAngleDegrees(this->ui.txtMaxPhiAngle->text().toDouble());
+
+  this->ScannerStyle->LidarScanner->SetMinThetaAngleDegrees(this->ui.txtMinThetaAngle->text().toDouble());
+
+  this->ScannerStyle->LidarScanner->SetMaxThetaAngleDegrees(this->ui.txtMaxThetaAngle->text().toDouble());
+
+  this->ScannerStyle->LidarScanner->SetNumberOfThetaPoints(this->ui.txtNumberOfThetaPoints->text().toUInt());
+
+  this->ScannerStyle->LidarScanner->SetNumberOfPhiPoints(this->ui.txtNumberOfPhiPoints->text().toUInt());
+}
+
 void Form::btnScan_clicked()
 {
   // Set the scan parameters
   //this->LidarScanner->SetPhiSpan(phiSpan);
   //this->LidarScanner->SetThetaSpan(thetaSpan);
-  this->ScannerStyle->LidarScanner->SetMinPhiAngle(this->ui.txtMinPhiAngle->text().toDouble());
 
-  this->ScannerStyle->LidarScanner->SetMaxPhiAngle(this->ui.txtMaxPhiAngle->text().toDouble());
-
-  this->ScannerStyle->LidarScanner->SetMinThetaAngle(this->ui.txtMinThetaAngle->text().toDouble());
-
-  this->ScannerStyle->LidarScanner->SetMaxThetaAngle(this->ui.txtMaxThetaAngle->text().toDouble());
-
-  this->ScannerStyle->LidarScanner->SetNumberOfThetaPoints(this->ui.txtNumberOfThetaPoints->text().toUInt());
-
-  this->ScannerStyle->LidarScanner->SetNumberOfPhiPoints(this->ui.txtNumberOfPhiPoints->text().toUInt());
+  SetScannerParameters();
 
   //this->ScannerStyle->LidarScanner->SetTransform(transform);
 
@@ -153,43 +169,18 @@ void Form::btnSaveScan_clicked()
   std::cout << "Set filename: " << fileName.toStdString() << std::endl;
 }
 
-void Form::CreateScannerRepresentation()
-{
-  this->ScannerStyle->LidarScanner->SetMinThetaAngle(vtkMath::RadiansFromDegrees(this->ui.txtMinThetaAngle->text().toDouble()));
-  this->ScannerStyle->LidarScanner->SetMaxThetaAngle(vtkMath::RadiansFromDegrees(this->ui.txtMaxThetaAngle->text().toDouble()));
-
-  this->ScannerStyle->LidarScanner->SetMinPhiAngle(vtkMath::RadiansFromDegrees(this->ui.txtMinPhiAngle->text().toDouble()));
-  this->ScannerStyle->LidarScanner->SetMaxPhiAngle(vtkMath::RadiansFromDegrees(this->ui.txtMaxPhiAngle->text().toDouble()));
-
-  this->ScannerStyle->LidarScanner->SetNumberOfThetaPoints(vtkMath::RadiansFromDegrees(this->ui.txtNumberOfThetaPoints->text().toDouble()));
-  this->ScannerStyle->LidarScanner->SetNumberOfPhiPoints(vtkMath::RadiansFromDegrees(this->ui.txtNumberOfPhiPoints->text().toDouble()));
-
-  this->ScannerStyle->LidarScanner->SetRepresentationLength(10);
-
-  vtkSmartPointer<vtkPolyData> temp =
-    vtkSmartPointer<vtkPolyData>::New();
-  this->ScannerStyle->LidarScanner->CreateRepresentation(temp);
-
-  vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter =
-    vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-  transformFilter->SetTransform(this->ScannerStyle->LidarScannerTransform);
-  transformFilter->SetInputConnection(temp->GetProducerPort());
-  transformFilter->Update();
-
-  this->ScannerStyle->LidarScannerRepresentation->ShallowCopy(transformFilter->GetOutput());
-}
 
 void Form::btnPreview_clicked()
 {
-  CreateScannerRepresentation();
+  SetScannerParameters();
 
+  this->ScannerStyle->CreateRepresentation();
   this->ScannerStyle->LidarScannerMapper->SetInputConnection(this->ScannerStyle->LidarScannerRepresentation->GetProducerPort());
   this->ScannerStyle->LidarScannerActor->SetMapper(this->ScannerStyle->LidarScannerMapper);
 
   this->Renderer->AddActor(this->ScannerStyle->LidarScannerActor);
 
   this->Refresh();
-
 }
 
 void Form::btnOpenFile_clicked()

@@ -45,10 +45,19 @@ public:
 
   vtkGetMacro(NumberOfThetaPoints, unsigned int);
   vtkGetMacro(NumberOfPhiPoints, unsigned int);
+
+  // These functions expect radians
   vtkGetMacro(MinPhiAngle, double);
   vtkGetMacro(MaxPhiAngle, double);
   vtkGetMacro(MinThetaAngle, double);
   vtkGetMacro(MaxThetaAngle, double);
+
+  // These functions expect radians
+  void SetMinPhiAngleDegrees(double);
+  void SetMaxPhiAngleDegrees(double);
+  void SetMinThetaAngleDegrees(double);
+  void SetMaxThetaAngleDegrees(double);
+
   vtkGetMacro(LOSVariance, double);
   vtkGetMacro(OrthogonalVariance, double);
 
@@ -107,9 +116,9 @@ protected:
   ~vtkLidarScanner();
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *); //the function that makes this class work with the vtk pipeline
   int FillInputPortInformation( int port, vtkInformation* info );
-  
+
   void ConstructOutput();
-  
+
   static const double Forward[3]; //the direction of the "default" scanner
   static double Origin[3];
 

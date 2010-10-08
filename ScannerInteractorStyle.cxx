@@ -44,16 +44,29 @@ ScannerInteractorStyle::ScannerInteractorStyle()
   this->OrientationWidget->SetOrientationMarker(this->OrientationAxes);
   this->OrientationWidget->SetViewport( 0.0, 0.0, 0.4, 0.4 );
 
-  //this->BoxWidget->SetInteractor(this->ui.qvtkWidget->GetRenderWindow()->GetInteractor());
+  vtkBoxRepresentation::SafeDownCast(this->BoxWidget->GetRepresentation())->HandlesOff();
+}
+
+void ScannerInteractorStyle::Initialize()
+{
+  // Widgets cannot be enabled in constructor
   this->BoxWidget->SetInteractor(this->Interactor);
   this->BoxWidget->On();
 
-  //this->OrientationWidget->SetInteractor(this->ui.qvtkWidget->GetRenderWindow()->GetInteractor());
   this->OrientationWidget->SetInteractor(this->Interactor);
   this->OrientationWidget->On();
+}
 
-  //this->boxWidget->ScalingEnabledOff();
-  vtkBoxRepresentation::SafeDownCast(this->BoxWidget->GetRepresentation())->HandlesOff();
+void ScannerInteractorStyle::CreateRepresentation()
+{
+  this->LidarScanner->CreateRepresentation(this->LidarScannerRepresentation);
+  std::cout << "Representation has " << this->LidarScannerRepresentation->GetNumberOfPoints() << " points." << std::endl;
+  for(vtkIdType i = 0; i < this->LidarScannerRepresentation->GetNumberOfPoints(); i++)
+    {
+    double p[3];
+    this->LidarScannerRepresentation->GetPoint(i,p);
+    std::cout << "P: " << p[0] << " " << p[1] << " " << p[2] << std::endl;
+    }
 }
 
 void ScannerInteractorStyle::HandleBoxWidgetEvent(vtkObject* caller, long unsigned int eventId, void* callData)

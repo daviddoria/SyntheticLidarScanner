@@ -25,7 +25,7 @@ public slots:
   void btnSaveScan_clicked();
   void btnOpenFile_clicked();
 
-  void CreateScannerRepresentation();
+  void SetScannerParameters();
 
 private:
   Ui::Form ui;

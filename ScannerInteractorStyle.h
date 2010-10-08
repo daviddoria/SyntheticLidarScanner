@@ -20,6 +20,10 @@ public:
   vtkTypeMacro(ScannerInteractorStyle, vtkInteractorStyleTrackballCamera);
   ScannerInteractorStyle();
 
+  void Initialize();
+
+  void CreateRepresentation();
+
   void Refresh();
 
   void HandleBoxWidgetEvent(vtkObject* caller, long unsigned int eventId, void* callData);
