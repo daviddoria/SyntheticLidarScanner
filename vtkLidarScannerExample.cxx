@@ -5,10 +5,12 @@
 #include "vtkLidarPoint.h"
 
 #include <vtkSmartPointer.h>
+#include <vtkImageData.h>
 #include <vtkMath.h>
 #include <vtkPolyData.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLPolyDataWriter.h>
+#include <vtkXMLImageDataWriter.h>
 #include <vtkTransform.h>
 #include <vtkSphereSource.h>
 
@@ -16,7 +18,7 @@ int main(int argc, char* argv[])
 {
   bool createMesh = true;
   
-  //convert strings to doubles
+  // Convert strings to doubles
   double tx = 0;
   double ty = -2;
   double tz = 0;
@@ -32,22 +34,22 @@ int main(int argc, char* argv[])
   
   bool storeRays = true;
   
-  //create a sphere
+  // Create a sphere
   vtkSmartPointer<vtkSphereSource> sphereSource = 
-      vtkSmartPointer<vtkSphereSource>::New();
+    vtkSmartPointer<vtkSphereSource>::New();
   sphereSource->Update();
   
   {
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = 
-      vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName("ExampleInput.vtp");
   writer->SetInputConnection(sphereSource->GetOutputPort());
   writer->Write();
   }
   
-  //construct a vtkLidarScanner and set all of its parameters
+  // Construct a vtkLidarScanner and set all of its parameters
   vtkSmartPointer<vtkLidarScanner> scanner = 
-      vtkSmartPointer<vtkLidarScanner>::New();
+    vtkSmartPointer<vtkLidarScanner>::New();
   
   //Scanner->WriteScanner("scanner_original.vtp");
           
@@ -60,11 +62,10 @@ int main(int argc, char* argv[])
   
   scanner->SetStoreRays(storeRays);
   
-  //"aim" the scanner.  This is a very simple translation, but any transformation will work
+  // "Aim" the scanner.  This is a very simple translation, but any transformation will work
   vtkSmartPointer<vtkTransform> transform = 
-      vtkSmartPointer<vtkTransform>::New();
+    vtkSmartPointer<vtkTransform>::New();
   transform->PostMultiply();
-  
   transform->RotateX(rx);
   transform->RotateY(ry);
   transform->RotateZ(rz);
@@ -73,19 +74,32 @@ int main(int argc, char* argv[])
   scanner->SetTransform(transform);
   scanner->WriteScanner("scanner_transformed.vtp");
   
-  scanner->MakeSphericalGrid(); //indicate to use uniform spherical spacing
-  
   scanner->SetCreateMesh(createMesh);
   
   scanner->SetInputConnection(sphereSource->GetOutputPort());
   scanner->Update();
-  
-  //create a writer and write the output vtp file
-  vtkSmartPointer<vtkXMLPolyDataWriter> writer = 
-      vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-  writer->SetFileName("ExampleScan.vtp");
+
+  std::cout << "Before writer " << scanner->GetOutput()->GetNumberOfPoints() << " Points." << std::endl;
+
+  int* dims = scanner->GetOutput()->GetDimensions();
+
+  for (int y=0; y<dims[1]; y++)
+    {
+    for (int x=0; x<dims[0]; x++)
+      {
+      unsigned char* pixel = static_cast<unsigned char*>(scanner->GetOutput()->GetScalarPointer(x,y,0));
+      std::cout << (int)pixel[0] << " " << (int)pixel[1] << " " << (int)pixel[2] << std::endl;
+      }
+    std::cout << std::endl;
+    }
+    
+  //std::cout << *(scanner->GetOutput() ) << std::endl;
+  // Create a writer and write the output vtp file
+  vtkSmartPointer<vtkXMLImageDataWriter> writer =
+    vtkSmartPointer<vtkXMLImageDataWriter>::New();
+  writer->SetFileName("ExampleScan.vti");
   writer->SetInputConnection(scanner->GetOutputPort());
   writer->Write();
-	
+
   return EXIT_SUCCESS;
 }

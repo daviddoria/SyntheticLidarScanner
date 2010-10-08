@@ -85,6 +85,7 @@ public:
 
   void SetScene(vtkSmartPointer<vtkPolyData> scene);
   void SetTransform(vtkSmartPointer<vtkTransform> transform);
+  vtkTransform* GetTransform();
 
   void SetThetaSpan(const double theta); // (radians)
   void SetPhiSpan(const double phi);  // (radians)
@@ -98,8 +99,6 @@ public:
   void AcquirePoint(const unsigned int thetaIndex, const unsigned int phiIndex); //do a single ray/scene intersection
 
   void PerformScan(); //actually do all of the ray/scene intersections
-
-  void MakeSphericalGrid(); //use a uniform spherical spacing
 
   void GetValidOutputPoints(vtkPolyData* output); //put all of the valid scene intersections into a PolyData
   void GetAllOutputPoints(vtkPolyData* output); //put all returns (including misses) into a PolyData
@@ -117,6 +116,8 @@ protected:
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *); //the function that makes this class work with the vtk pipeline
   int FillInputPortInformation( int port, vtkInformation* info );
 
+  void MakeSphericalGrid(); //use a uniform spherical spacing
+  
   void ConstructOutput();
 
   static const double Forward[3]; //the direction of the "default" scanner
@@ -142,7 +143,6 @@ protected:
   // arrays which contain the rest of the scan information
   vtkSmartPointer<vtkImageData> Output;
 
-  vtkSmartPointer<vtkDenseArray<vtkRay*> > RayGrid;
   vtkSmartPointer<vtkDenseArray<vtkLidarPoint*> > Scan;
 
   double LOSVariance;

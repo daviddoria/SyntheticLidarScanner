@@ -22,6 +22,7 @@ public:
   vtkGetVector3Macro(Coordinate,double); //get the coordinate of the intersection
   vtkGetObjectMacro(Ray, vtkRay); //get the ray that was/will be cast into the scene
   double* GetNormal(); // get the normal of the ray/scene intersection
+  void GetNormal(double n[3]); // get the normal of the ray/scene intersection
   vtkGetMacro(Hit, bool); //see if this is a valid point (if there was a valid scene intersection)
 
   /////////// Mutators ///////////

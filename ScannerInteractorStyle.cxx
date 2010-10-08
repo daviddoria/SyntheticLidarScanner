@@ -24,7 +24,6 @@ ScannerInteractorStyle::ScannerInteractorStyle()
   this->LidarScannerRepresentation = vtkSmartPointer<vtkPolyData>::New();
   this->LidarScannerMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   this->LidarScannerActor = vtkSmartPointer<vtkActor>::New();
-  this->LidarScannerTransform = vtkSmartPointer<vtkTransform>::New();
 
   this->Scene = vtkSmartPointer<vtkPolyData>::New();
   this->SceneActor = vtkSmartPointer<vtkActor>::New();
@@ -34,17 +33,18 @@ ScannerInteractorStyle::ScannerInteractorStyle()
   this->ScanActor = vtkSmartPointer<vtkActor>::New();
   this->ScanMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 
+  // Box widget
   this->BoxWidget = vtkSmartPointer<vtkBoxWidget2>::New();
-  //this->BoxWidget->AddObserver(vtkCommand::InteractionEvent, this, &Form::HandleBoxWidgetEvent);
   this->BoxWidget->AddObserver(vtkCommand::InteractionEvent, this, &ScannerInteractorStyle::HandleBoxWidgetEvent);
-
+  vtkBoxRepresentation::SafeDownCast(this->BoxWidget->GetRepresentation())->HandlesOff();
+  
   // Orientation widget
   this->OrientationAxes = vtkSmartPointer<vtkAxesActor>::New();
   this->OrientationWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
   this->OrientationWidget->SetOrientationMarker(this->OrientationAxes);
-  this->OrientationWidget->SetViewport( 0.0, 0.0, 0.4, 0.4 );
+  this->OrientationWidget->SetViewport(0.0, 0.0, 0.2, 0.2);
 
-  vtkBoxRepresentation::SafeDownCast(this->BoxWidget->GetRepresentation())->HandlesOff();
+  
 }
 
 void ScannerInteractorStyle::Initialize()
@@ -60,6 +60,7 @@ void ScannerInteractorStyle::Initialize()
 void ScannerInteractorStyle::CreateRepresentation()
 {
   this->LidarScanner->CreateRepresentation(this->LidarScannerRepresentation);
+  /*
   std::cout << "Representation has " << this->LidarScannerRepresentation->GetNumberOfPoints() << " points." << std::endl;
   for(vtkIdType i = 0; i < this->LidarScannerRepresentation->GetNumberOfPoints(); i++)
     {
@@ -67,19 +68,18 @@ void ScannerInteractorStyle::CreateRepresentation()
     this->LidarScannerRepresentation->GetPoint(i,p);
     std::cout << "P: " << p[0] << " " << p[1] << " " << p[2] << std::endl;
     }
+  */
 }
 
 void ScannerInteractorStyle::HandleBoxWidgetEvent(vtkObject* caller, long unsigned int eventId, void* callData)
 {
+  //std::cout << "BoxWidget event" << std::endl;
   vtkBoxWidget2* boxWidget = static_cast<vtkBoxWidget2*>(caller);
-  vtkBoxRepresentation::SafeDownCast(boxWidget->GetRepresentation())->GetTransform(this->LidarScannerTransform);
+  vtkBoxRepresentation::SafeDownCast(boxWidget->GetRepresentation())->GetTransform(this->LidarScanner->GetTransform());
 
-  //CreateScannerRepresentation();
+  //std::cout << "Current transform: " << *(this->LidarScannerTransform) << std::endl;
 
-  this->LidarScannerMapper->SetInputConnection(this->LidarScannerRepresentation->GetProducerPort());
-  this->LidarScannerActor->SetMapper(this->LidarScannerMapper);
-
-  //this->Renderer->AddActor(this->LidarScannerActor);
+  CreateRepresentation();
 
   this->Refresh();
 }

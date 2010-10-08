@@ -29,6 +29,7 @@
 #include "vtkMath.h"
 #include "vtkDenseArray.h"
 #include "vtkVertexGlyphFilter.h"
+#include "vtkImageReslice.h"
 
 vtkStandardNewMacro(vtkLidarScanner);
 
@@ -70,10 +71,7 @@ vtkLidarScanner::vtkLidarScanner()
 
   this->Scene = vtkSmartPointer<vtkPolyData>::New();
 
-  //this->RayGrid = vtkSmartPointer<vtkDenseArray<vtkRay*> >::New();
   this->Scan = vtkSmartPointer<vtkDenseArray<vtkLidarPoint*> >::New();
-
-
 }
 
 int vtkLidarScanner::FillInputPortInformation( int port, vtkInformation* info )
@@ -92,6 +90,16 @@ int vtkLidarScanner::FillInputPortInformation( int port, vtkInformation* info )
 
 vtkLidarScanner::~vtkLidarScanner()
 {
+  if(this->Scan)
+    {
+    for(unsigned int i = this->Scan->GetExtent(0).GetBegin(); i <this->Scan->GetExtent(0).GetEnd(); i++)
+      {
+      for(unsigned int j = this->Scan->GetExtent(1).GetBegin(); j <this->Scan->GetExtent(1).GetEnd(); j++)
+        {
+        this->Scan->GetValue(i,j)->Delete();
+        }
+      }
+    }
  /*
   this->OutputGrid->Delete();
 
@@ -252,6 +260,11 @@ void vtkLidarScanner::SetTransform(vtkSmartPointer<vtkTransform> transform)
   this->Transform->DeepCopy(transform);
 }
 
+vtkTransform* vtkLidarScanner::GetTransform()
+{
+  return this->Transform;
+}
+
 int vtkLidarScanner::RequestData(vtkInformation *vtkNotUsed(request),
 		vtkInformationVector **inputVector,
   vtkInformationVector *outputVector)
@@ -269,45 +282,57 @@ int vtkLidarScanner::RequestData(vtkInformation *vtkNotUsed(request),
   vtkImageData *output = vtkImageData::SafeDownCast(
           outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  std::cout << "input to vtkLidarScanner has " << input->GetNumberOfPoints() << " points." << std::endl;
-
   this->SetScene(input);
 
   this->PerformScan();
 
-  ConstructOutput();
+  this->ConstructOutput();
 
-  /*
-  if(this->CreateMesh)
-    {
-    this->GetOutputMesh(output);
-    }
-  else
-    {
-    this->GetValidOutputPoints(output);
-    }
-  */
+  output->ShallowCopy(this->Output);
+  //output->SetUpdateExtent(output->GetExtent());
+  output->SetWholeExtent(output->GetExtent());
 
   return 1;
 }
 
 void vtkLidarScanner::ConstructOutput()
 {
+  //this->Output->SetDimensions(this->NumberOfPhiPoints, this->NumberOfThetaPoints, 1);
+  //this->Output->SetExtent(0, this->NumberOfPhiPoints - 1, 0, this->NumberOfThetaPoints - 1, 0, 0);
+
+  vtkSmartPointer<vtkImageReslice> reslice =
+    vtkSmartPointer<vtkImageReslice>::New();
+  reslice->SetOutputExtent(0, this->NumberOfPhiPoints - 1, 0, this->NumberOfThetaPoints - 1, 0, 0);
+  reslice->SetInputConnection(this->Output->GetProducerPort());
+  reslice->Update();
+
+  this->Output->ShallowCopy(reslice->GetOutput());
+  
+  int extent[6];
+  this->Output->GetExtent(extent);
+  std::cout << "extent: " << extent[0] << " " << extent[1] << " " << extent[2] << " " << extent[3] << " " << extent[4] << " " << extent[5] << std::endl;
+  this->Output->SetNumberOfScalarComponents(3);
+  this->Output->SetScalarTypeToUnsignedChar();
+  
   vtkSmartPointer<vtkDoubleArray> coordinateArray =
     vtkSmartPointer<vtkDoubleArray>::New();
+  coordinateArray->SetName("CoordinateArray");
   coordinateArray->SetNumberOfComponents(3);
   coordinateArray->SetNumberOfTuples(this->NumberOfPhiPoints * this->NumberOfThetaPoints);
 
   vtkSmartPointer<vtkDoubleArray> normalArray =
     vtkSmartPointer<vtkDoubleArray>::New();
+  normalArray->SetName("NormalArray");
   normalArray->SetNumberOfComponents(3);
   normalArray->SetNumberOfTuples(this->NumberOfPhiPoints * this->NumberOfThetaPoints);
 
   vtkSmartPointer<vtkIntArray> validArray =
     vtkSmartPointer<vtkIntArray>::New();
+  validArray->SetName("ValidArray");
   validArray->SetNumberOfComponents(1);
   validArray->SetNumberOfTuples(this->NumberOfPhiPoints * this->NumberOfThetaPoints);
 
+  std::cout << "should be " << this->NumberOfPhiPoints * this->NumberOfThetaPoints << " points." << std::endl;
   for(unsigned int phi = 0; phi < this->NumberOfPhiPoints; phi++)
     {
     for(unsigned int theta = 0; theta < this->NumberOfThetaPoints; theta++)
@@ -321,13 +346,30 @@ void vtkLidarScanner::ConstructOutput()
       this->Scan->GetValue(phi, theta)->GetCoordinate(coordinate);
       coordinateArray->SetTupleValue(index, coordinate);
 
-      double normal[3];
-      this->Scan->GetValue(phi, theta)->GetCoordinate(normal);
-      normalArray->SetTupleValue(index, normal);
+      //double normal[3];
+      //this->Scan->GetValue(phi, theta)->GetNormal(normal);
+      //normalArray->SetTupleValue(index, normal);
+      double n[3];
+      this->Scan->GetValue(phi, theta)->GetNormal(n);
+      normalArray->SetTupleValue(index, n);
 
       validArray->SetValue(index, this->Scan->GetValue(phi, theta)->GetHit());
+
+      unsigned char* pixel = static_cast<unsigned char*>(this->Output->GetScalarPointer(phi,theta,0));
+      if(this->Scan->GetValue(phi, theta)->GetHit())
+        {
+        pixel[0] = 255; pixel[1] = 255; pixel[2] = 255;
+        }
+      else
+        {
+        pixel[0] = 0; pixel[1] = 0; pixel[2] = 0;
+        }
       }
     }
+
+  this->Output->GetPointData()->AddArray(validArray);
+  this->Output->GetPointData()->AddArray(coordinateArray);
+  this->Output->GetPointData()->AddArray(normalArray);
 
 }
 
@@ -344,7 +386,7 @@ void vtkLidarScanner::AcquirePoint(const unsigned int thetaIndex, const unsigned
 
   // We have computed the grid of rays (in MakeSphericalGrid()) relative to a "default" scanner (i.e. Forward = (0,1,0))
   // so we have to apply the scanner's transform to the ray before casting it
-  vtkRay* ray = this->RayGrid->GetValue(phiIndex, thetaIndex);
+  vtkRay* ray = this->Scan->GetValue(phiIndex, thetaIndex)->GetRay();
   ray->ApplyTransform(this->Transform);
 
   double t;
@@ -389,6 +431,9 @@ void vtkLidarScanner::AcquirePoint(const unsigned int thetaIndex, const unsigned
 void vtkLidarScanner::PerformScan()
 {
   std::cout << "Performing scan..." << std::endl;
+  
+  this->MakeSphericalGrid();
+  
   // Loop through the grid and intersect each ray with the scene.
   for(unsigned int theta = 0; theta < this->NumberOfThetaPoints; theta++)
     {
@@ -397,7 +442,6 @@ void vtkLidarScanner::PerformScan()
       AcquirePoint(theta, phi);
       }
     }
-
 }
 
 
@@ -411,9 +455,9 @@ void vtkLidarScanner::MakeSphericalGrid()
   // Size the grid
   this->Scan->Resize(this->NumberOfPhiPoints, this->NumberOfThetaPoints);
 
-  for(unsigned int thetaCounter = 0; thetaCounter < NumberOfThetaPoints; thetaCounter++)
+  for(unsigned int thetaCounter = 0; thetaCounter < this->NumberOfThetaPoints; thetaCounter++)
     {
-    for(unsigned int phiCounter = 0; phiCounter < NumberOfPhiPoints; phiCounter++)
+    for(unsigned int phiCounter = 0; phiCounter < this->NumberOfPhiPoints; phiCounter++)
       {
       // Compute the (phi,theta) coordinate for the current grid location
       double phi = this->MinPhiAngle + phiCounter * this->GetPhiStep();
@@ -427,13 +471,11 @@ void vtkLidarScanner::MakeSphericalGrid()
       double* rayDir = transform->TransformPoint(this->Forward);
 
       // Construct a ray
-      vtkSmartPointer<vtkRay> ray = vtkSmartPointer<vtkRay>::New();
-
+      vtkRay* ray = vtkRay::New();
       ray->SetOrigin(this->Origin);
       ray->SetDirection(rayDir);
 
-      vtkSmartPointer<vtkLidarPoint> lidarPoint =
-        vtkSmartPointer<vtkLidarPoint>::New();
+      vtkLidarPoint* lidarPoint = vtkLidarPoint::New();
       lidarPoint->SetRay(ray);
 
       // Store the ray in the grid
@@ -667,7 +709,9 @@ void vtkLidarScanner::GetAllOutputPoints(vtkPolyData* output)
       double* p = this->Scan->GetValue(phi, theta)->GetCoordinate();
       points->InsertNextPoint(p);
 
-      normals->InsertNextTupleValue(this->Scan->GetValue(phi, theta)->GetNormal());
+      double n[3];
+      this->Scan->GetValue(phi, theta)->GetNormal(n);
+      normals->InsertNextTupleValue(n);
 
       validArray->InsertNextValue(this->Scan->GetValue(phi, theta)->GetHit());
     }//end phi loop
@@ -945,8 +989,15 @@ void vtkLidarScanner::CreateRepresentation(vtkPolyData* representation)
     vtkSmartPointer<vtkPolyData>::New();
   pd->ShallowCopy(transformFilter->GetOutput());
   pd->SetPoints(points);
+  
+  // Now that we have built the representation in the default coordinate system, transform it to the current scanner transformation
+  vtkSmartPointer<vtkTransformPolyDataFilter> scannerTransformFilter =
+    vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+  scannerTransformFilter->SetTransform(this->Transform);
+  scannerTransformFilter->SetInputConnection(pd->GetProducerPort());
+  scannerTransformFilter->Update();
 
-  representation->ShallowCopy(pd);
+  representation->ShallowCopy(scannerTransformFilter->GetOutput());
 }
 
 

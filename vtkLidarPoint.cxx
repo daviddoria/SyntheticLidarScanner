@@ -9,7 +9,7 @@ vtkStandardNewMacro(vtkLidarPoint);
 
 vtkLidarPoint::vtkLidarPoint()
 {
-	//until specified, this LidarPoint is invalid
+	// Until specified, this LidarPoint is invalid
   this->Hit = false;
   this->Ray = NULL;
 }
@@ -17,15 +17,24 @@ vtkLidarPoint::vtkLidarPoint()
 vtkLidarPoint::~vtkLidarPoint() 
 {
   if(this->Ray)
+    {
     this->Ray->Delete();
+    }
 }
 
 vtkCxxSetObjectMacro(vtkLidarPoint, Ray, vtkRay);
 
+void vtkLidarPoint::GetNormal(double n[3])
+{
+  for(unsigned int i = 0; i < 3; i++)
+    {
+    n[i] = this->Normal[i];
+    }
+}
 
 double* vtkLidarPoint::GetNormal()
 {
-	//there is only a normal if this is a valid LidarPoint
+	// There is only a normal if this is a valid LidarPoint
 	if(this->Hit)
     {
 		return Normal;

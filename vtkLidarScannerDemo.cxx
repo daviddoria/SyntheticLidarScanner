@@ -24,33 +24,34 @@ int main(int argc, char* argv[])
             << "InputFilename OutputFilename CreateMesh? Tx Ty Tz Rx Ry Rz (R in degrees - dictated by VTK) NumThetaPoints NumPhiPoints ThetaSpan(radians) PhiSpan(radians) StoreRays? " << std::endl;
     return EXIT_FAILURE;
   }
-  //get the input/output filenames from the command line
-  vtkstd::string inputFilename = argv[1];
-  vtkstd::string outputFilename = argv[2];
-  vtkstd::string strCreateMesh = argv[3];
-  vtkstd::string strTx = argv[4];
-  vtkstd::string strTy = argv[5];
-  vtkstd::string strTz = argv[6];
-  vtkstd::string strRx = argv[7];
-  vtkstd::string strRy = argv[8];
-  vtkstd::string strRz = argv[9];
-  vtkstd::string strThetaPoints = argv[10];
-  vtkstd::string strPhiPoints = argv[11];
-  vtkstd::string strThetaSpan = argv[12];
-  vtkstd::string strPhiSpan = argv[13];
-  vtkstd::string strStoreRays = argv[14];
   
-  vtkstd::cout << "InputFilename: " << inputFilename << std::endl;
-  vtkstd::cout << "OutputFilename: " << outputFilename << std::endl;
+  // Get the input/output filenames from the command line
+  std::string inputFilename = argv[1];
+  std::string outputFilename = argv[2];
+  std::string strCreateMesh = argv[3];
+  std::string strTx = argv[4];
+  std::string strTy = argv[5];
+  std::string strTz = argv[6];
+  std::string strRx = argv[7];
+  std::string strRy = argv[8];
+  std::string strRz = argv[9];
+  std::string strThetaPoints = argv[10];
+  std::string strPhiPoints = argv[11];
+  std::string strThetaSpan = argv[12];
+  std::string strPhiSpan = argv[13];
+  std::string strStoreRays = argv[14];
   
-  //convert string to bool
+  std::cout << "InputFilename: " << inputFilename << std::endl;
+  std::cout << "OutputFilename: " << outputFilename << std::endl;
+  
+  // Convert string to bool
   vtkstd::stringstream ssCreateMesh(strCreateMesh);
   bool createMesh;
   ssCreateMesh >> createMesh;
   
-  vtkstd::cout << "Create Mesh? " << createMesh << vtkstd::endl;
+  std::cout << "Create Mesh? " << createMesh << std::endl;
   
-  //convert strings to doubles
+  // Convert strings to doubles
   double tx, ty, tz, rx, ry, rz;
   
   std::stringstream ssTx(strTx);
@@ -71,51 +72,51 @@ int main(int argc, char* argv[])
   std::stringstream ssRz(strRz);
   ssRz >> rz;
   
-  vtkstd::cout << "Tx: " << tx << vtkstd::endl;
-  vtkstd::cout << "Ty: " << ty << vtkstd::endl;
-  vtkstd::cout << "Tz: " << tz << vtkstd::endl;
-  vtkstd::cout << "Rx: " << rx << vtkstd::endl;
-  vtkstd::cout << "Ry: " << ry << vtkstd::endl;
-  vtkstd::cout << "Rz: " << rz << vtkstd::endl;
+  std::cout << "Tx: " << tx << std::endl;
+  std::cout << "Ty: " << ty << std::endl;
+  std::cout << "Tz: " << tz << std::endl;
+  std::cout << "Rx: " << rx << std::endl;
+  std::cout << "Ry: " << ry << std::endl;
+  std::cout << "Rz: " << rz << std::endl;
     
   unsigned int thetaPoints;
   unsigned int phiPoints;
   
-  vtkstd::stringstream ssThetaPoints(strThetaPoints);
+  std::stringstream ssThetaPoints(strThetaPoints);
   ssThetaPoints >> thetaPoints;
   
-  vtkstd::stringstream ssPhiPoints(strPhiPoints);
+  std::stringstream ssPhiPoints(strPhiPoints);
   ssPhiPoints >> phiPoints;
       
-  vtkstd::cout << "Theta points: " << thetaPoints << vtkstd::endl;
-  vtkstd::cout << "Phi points: " << phiPoints << vtkstd::endl;
+  std::cout << "Theta points: " << thetaPoints << std::endl;
+  std::cout << "Phi points: " << phiPoints << std::endl;
       
   double thetaSpan, phiSpan;
   
-  vtkstd::stringstream ssThetaSpan(strThetaSpan);
+  std::stringstream ssThetaSpan(strThetaSpan);
   ssThetaSpan >> thetaSpan;
-  vtkstd::cout << "Theta span: " << thetaSpan << vtkstd::endl;
+  std::cout << "Theta span: " << thetaSpan << std::endl;
   
   vtkstd::stringstream ssPhiSpan(strPhiSpan);
   ssPhiSpan >> phiSpan;
-  vtkstd::cout << "Phi span: " << phiSpan << vtkstd::endl;
+  std::cout << "Phi span: " << phiSpan << std::endl;
   
-  //convert string to bool
-  vtkstd::stringstream ssStoreRays(strStoreRays);
+  // Convert string to bool
+  std::stringstream ssStoreRays(strStoreRays);
   bool storeRays;
   ssStoreRays >> storeRays;
   
   std::cout << "Store Rays? " << storeRays << std::endl;
   
-  //read the input vtp file
+  // Read the input vtp file
   vtkSmartPointer<vtkXMLPolyDataReader> reader = 
-      vtkSmartPointer<vtkXMLPolyDataReader>::New();
+    vtkSmartPointer<vtkXMLPolyDataReader>::New();
   reader->SetFileName(inputFilename.c_str());
   reader->Update();
   
-  //construct a vtkLidarScanner and set all of its parameters
+  // Construct a vtkLidarScanner and set all of its parameters
   vtkSmartPointer<vtkLidarScanner> scanner = 
-      vtkSmartPointer<vtkLidarScanner>::New();
+    vtkSmartPointer<vtkLidarScanner>::New();
   
   //Scanner->WriteScanner("scanner_original.vtp");
           
@@ -128,9 +129,9 @@ int main(int argc, char* argv[])
   
   scanner->SetStoreRays(storeRays);
   
-  //"aim" the scanner.  This is a very simple translation, but any transformation will work
+  // "Aim" the scanner.  This is a very simple translation, but any transformation will work
   vtkSmartPointer<vtkTransform> transform = 
-      vtkSmartPointer<vtkTransform>::New();
+    vtkSmartPointer<vtkTransform>::New();
   transform->PostMultiply();
   
   transform->RotateX(rx);
@@ -148,9 +149,9 @@ int main(int argc, char* argv[])
   scanner->SetInputConnection(reader->GetOutputPort());
   scanner->Update();
   
-  //create a writer and write the output vtp file
+  // Create a writer and write the output vtp file
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = 
-      vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName(outputFilename.c_str());
   writer->SetInputConnection(scanner->GetOutputPort());
   writer->Write();

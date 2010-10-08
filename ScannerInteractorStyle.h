@@ -32,7 +32,6 @@ public:
   vtkSmartPointer<vtkPolyData> LidarScannerRepresentation;
   vtkSmartPointer<vtkPolyDataMapper> LidarScannerMapper;
   vtkSmartPointer<vtkActor> LidarScannerActor;
-  vtkSmartPointer<vtkTransform> LidarScannerTransform;
 
   vtkSmartPointer<vtkPolyData> Scene;
   vtkSmartPointer<vtkActor> SceneActor;

@@ -61,18 +61,21 @@ Form::Form(int numArgs, char** args, QWidget *parent)
   this->argc = numArgs;
   this->argv = args;
 
-  // This should definitely be called first.
+  // This must be called first.
   ui.setupUi(this);
 
+  // This must come before the widget setup
+  this->Renderer = vtkSmartPointer<vtkRenderer>::New();
+  this->ui.qvtkWidget->GetRenderWindow()->AddRenderer(this->Renderer);
+  this->Renderer->SetBackground(.5,.5,1);
+  
   this->ScannerStyle = vtkSmartPointer<ScannerInteractorStyle>::New();
-  this->ui.qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(this->ScannerStyle);
-  this->ScannerStyle->SetCurrentRenderer(this->ui.qvtkWidget->GetRenderWindow()
-                    ->GetInteractor()->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
-  this->ScannerStyle->SetInteractor(this->ui.qvtkWidget->GetRenderWindow()->GetInteractor());
+  this->ScannerStyle->SetCurrentRenderer(this->Renderer);
+  this->ScannerStyle->SetInteractor(this->ui.qvtkWidget->GetInteractor());
   this->ScannerStyle->Initialize();
 
-  this->Renderer = vtkSmartPointer<vtkRenderer>::New();
-
+  this->ui.qvtkWidget->GetInteractor()->SetInteractorStyle(this->ScannerStyle);
+  
   // GUI initializations
   this->ui.txtMinThetaAngle->setText(QString("-10"));
   this->ui.txtMaxThetaAngle->setText(QString("10"));
@@ -83,14 +86,7 @@ Form::Form(int numArgs, char** args, QWidget *parent)
   this->ui.txtNumberOfThetaPoints->setText(QString("10"));
   this->ui.txtNumberOfPhiPoints->setText(QString("10"));
 
-  // Setup Qt things
   this->ConnectSlots();
-
-  this->ui.qvtkWidget->GetRenderWindow()->AddRenderer(this->Renderer);
-
-  //this->ui.qvtkWidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle( this->Style);
-
-  this->Renderer->SetBackground(.5,.5,1); // Background color white
 
   this->Refresh();
 }
@@ -133,26 +129,19 @@ void Form::SetScannerParameters()
 
 void Form::btnScan_clicked()
 {
-  // Set the scan parameters
-  //this->LidarScanner->SetPhiSpan(phiSpan);
-  //this->LidarScanner->SetThetaSpan(thetaSpan);
 
   SetScannerParameters();
-
-  //this->ScannerStyle->LidarScanner->SetTransform(transform);
-
-  this->ScannerStyle->LidarScanner->MakeSphericalGrid(); //indicate to use uniform spherical spacing
-
-  //this->LidarScanner->SetCreateMesh(createMesh); // run delaunay on the resulting points?
 
   this->ScannerStyle->LidarScanner->SetInputConnection(this->ScannerStyle->Scene->GetProducerPort());
   this->ScannerStyle->LidarScanner->Update();
 
-  this->ScannerStyle->LidarScanner->GetAllOutputPoints(this->ScannerStyle->Scan);
+  this->ScannerStyle->LidarScanner->GetValidOutputPoints(this->ScannerStyle->Scan);
 
   // Setup the visualization
   this->ScannerStyle->ScanMapper->SetInputConnection(this->ScannerStyle->Scan->GetProducerPort());
   this->ScannerStyle->ScanActor->SetMapper(this->ScannerStyle->ScanMapper);
+  this->ScannerStyle->ScanActor->GetProperty()->SetPointSize(4);
+  this->ScannerStyle->ScanActor->GetProperty()->SetColor(1,0,0);
 
   this->Renderer->AddActor(this->ScannerStyle->ScanActor);
 
@@ -162,11 +151,18 @@ void Form::btnScan_clicked()
 
 void Form::btnSaveScan_clicked()
 {
-  //set a filename to save
+  // Set a filename to save
   QString fileName = QFileDialog::getSaveFileName(this,
      tr("Save Scan"), "/home/doriad", tr("Image Files (*.vtp)"));
 
-  std::cout << "Set filename: " << fileName.toStdString() << std::endl;
+  std::cout << "Saving to " << fileName.toStdString() << "..." << std::endl;
+
+  vtkSmartPointer<vtkXMLPolyDataWriter> writer =
+    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+  writer->SetInputConnection(this->ScannerStyle->Scan->GetProducerPort());
+  writer->SetFileName(fileName.toStdString().c_str());
+  writer->Write();
+  
 }
 
 
@@ -177,7 +173,9 @@ void Form::btnPreview_clicked()
   this->ScannerStyle->CreateRepresentation();
   this->ScannerStyle->LidarScannerMapper->SetInputConnection(this->ScannerStyle->LidarScannerRepresentation->GetProducerPort());
   this->ScannerStyle->LidarScannerActor->SetMapper(this->ScannerStyle->LidarScannerMapper);
-
+  this->ScannerStyle->LidarScannerActor->GetProperty()->SetOpacity(.5);
+  this->ScannerStyle->LidarScannerActor->GetProperty()->SetColor(224./255., 176./255., 1);
+  
   this->Renderer->AddActor(this->ScannerStyle->LidarScannerActor);
 
   this->Refresh();
@@ -195,6 +193,7 @@ void Form::btnOpenFile_clicked()
     {
     return;
     }
+    
   // Open the file
   vtkSmartPointer<vtkXMLPolyDataReader> reader =
     vtkSmartPointer<vtkXMLPolyDataReader>::New();

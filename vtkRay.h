@@ -1,8 +1,6 @@
 #ifndef __vtkRay_h
 #define __vtkRay_h
 
-#include <iostream>
-
 class vtkTransform;
 #include "vtkObject.h" //superclass
 
@@ -14,9 +12,11 @@ class vtkRay : public vtkObject
 {
 	public:
 		static vtkRay *New();
-    vtkTypeRevisionMacro(vtkRay,vtkObject);
+    vtkTypeMacro(vtkRay,vtkObject);
 		void PrintSelf(ostream &os, vtkIndent indent);
-		
+
+    vtkRay(){}
+    
 		////////// Accessors ///////////
 		vtkGetVector3Macro(Origin,double);
 		vtkGetVector3Macro(Direction,double);
@@ -31,10 +31,7 @@ class vtkRay : public vtkObject
 		double* GetPointAlong(const double dist); //get a point 'dist' units from the rays origin along the ray
 		
 		bool IsInfront(double* P); //check if a point is in the halfspace "in front of" the ray origin
-		
-	protected:
-		vtkRay();
-		~vtkRay();
+
 	private:
 		vtkRay(const vtkRay&);  // Not implemented.
 		void operator=(const vtkRay&);  // Not implemented.
