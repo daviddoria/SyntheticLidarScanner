@@ -22,7 +22,8 @@ public slots:
   void btnScan_clicked();
   void btnPreview_clicked();
 
-  void btnSaveScan_clicked();
+  void btnSavePoints_clicked();
+  void btnSaveFullOutput_clicked();
   void btnOpenFile_clicked();
 
   void SetScannerParameters();

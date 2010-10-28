@@ -4,30 +4,29 @@
 
 #include "form.h"
 
-#include <vtkTransformPolyDataFilter.h>
-#include <vtkTransform.h>
-#include <vtkSmartPointer.h>
+#include <vtkActor.h>
+#include <vtkAxesActor.h>
 #include <vtkBoxRepresentation.h>
-#include <vtkMath.h>
+#include <vtkBoxWidget2.h>
 #include <vtkDoubleArray.h>
 #include <vtkFloatArray.h>
-#include <vtkXMLPolyDataWriter.h>
-#include <vtkSphereSource.h>
-#include <vtkXMLPolyDataReader.h>
-#include <vtkPointData.h>
-#include <vtkRendererCollection.h>
-#include <vtkProperty.h>
+#include <vtkImageData.h>
+#include <vtkMath.h>
 #include <vtkPlanes.h>
 #include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
+#include <vtkPolyData.h>
+#include <vtkPointData.h>
+#include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
-#include <vtkPolyData.h>
-#include <vtkPolyDataMapper.h>
+#include <vtkRendererCollection.h>
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
 #include <vtkVertexGlyphFilter.h>
-#include <vtkBoxWidget2.h>
-#include <vtkAxesActor.h>
+#include <vtkXMLPolyDataWriter.h>
+#include <vtkXMLPolyDataReader.h>
+#include <vtkXMLImageDataWriter.h>
 
 #include "vtkLidarScanner.h"
 #include "ScannerInteractorStyle.h"
@@ -49,7 +48,8 @@ void Form::ConnectSlots()
   connect( this->ui.btnPreview, SIGNAL( clicked() ), this, SLOT(btnPreview_clicked()) );
   connect( this->ui.btnScan, SIGNAL( clicked() ), this, SLOT(btnScan_clicked()) );
 
-  connect( this->ui.btnSaveScan, SIGNAL( clicked() ), this, SLOT(btnSaveScan_clicked()) );
+  connect( this->ui.btnSavePoints, SIGNAL( clicked() ), this, SLOT(btnSavePoints_clicked()) );
+  connect( this->ui.btnSaveFullOutput, SIGNAL( clicked() ), this, SLOT(btnSaveFullOutput_clicked()) );
   connect( this->ui.btnOpenFile, SIGNAL( clicked() ), this, SLOT(btnOpenFile_clicked()) );
 
 }
@@ -64,6 +64,12 @@ Form::Form(int numArgs, char** args, QWidget *parent)
   // This must be called first.
   ui.setupUi(this);
 
+  // Set the progress bar to maruee mode
+  this->ui.progressBar->setMinimum(0);
+  this->ui.progressBar->setMaximum(0);
+  this->ui.progressBar->hide();
+  this->ui.lblScanning->hide();
+  
   // This must come before the widget setup
   this->Renderer = vtkSmartPointer<vtkRenderer>::New();
   this->ui.qvtkWidget->GetRenderWindow()->AddRenderer(this->Renderer);
@@ -129,9 +135,14 @@ void Form::SetScannerParameters()
 
 void Form::btnScan_clicked()
 {
-
+  // Start the progress bar
+  this->ui.progressBar->show();
+  this->ui.lblScanning->show();
+  
+  // Get the parameters from the UI and set them in the LidarScanner object
   SetScannerParameters();
 
+  // Perform the scan
   this->ScannerStyle->LidarScanner->SetInputConnection(this->ScannerStyle->Scene->GetProducerPort());
   this->ScannerStyle->LidarScanner->Update();
 
@@ -147,9 +158,12 @@ void Form::btnScan_clicked()
 
   this->Refresh();
 
+  // Stop the progress bar
+  this->ui.progressBar->hide();
+  this->ui.lblScanning->hide();
 }
 
-void Form::btnSaveScan_clicked()
+void Form::btnSavePoints_clicked()
 {
   // Set a filename to save
   QString fileName = QFileDialog::getSaveFileName(this,
@@ -157,12 +171,42 @@ void Form::btnSaveScan_clicked()
 
   std::cout << "Saving to " << fileName.toStdString() << "..." << std::endl;
 
-  vtkSmartPointer<vtkXMLPolyDataWriter> writer =
-    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-  writer->SetInputConnection(this->ScannerStyle->Scan->GetProducerPort());
-  writer->SetFileName(fileName.toStdString().c_str());
-  writer->Write();
+  if(this->ScannerStyle->Scan)
+    {
+    vtkSmartPointer<vtkXMLPolyDataWriter> writer =
+      vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+    writer->SetInputConnection(this->ScannerStyle->Scan->GetProducerPort());
+    writer->SetFileName(fileName.toStdString().c_str());
+    writer->Write();
+    }
+  else
+    {
+    std::cerr << "You must scan before you can save!" << std::endl;
+    }
   
+}
+
+void Form::btnSaveFullOutput_clicked()
+{
+  // Set a filename to save
+  QString fileName = QFileDialog::getSaveFileName(this,
+     tr("Save Scan"), "/home/doriad", tr("Image Files (*.vti)"));
+
+  std::cout << "Saving to " << fileName.toStdString() << "..." << std::endl;
+
+  vtkImageData* fullOutput = this->ScannerStyle->LidarScanner->GetOutput();
+  if(fullOutput)
+    {
+    vtkSmartPointer<vtkXMLImageDataWriter> writer =
+      vtkSmartPointer<vtkXMLImageDataWriter>::New();
+    writer->SetInputConnection(fullOutput->GetProducerPort());
+    writer->SetFileName(fileName.toStdString().c_str());
+    writer->Write();
+    }
+  else
+    {
+    std::cerr << "You must scan before you can save!" << std::endl;
+    }
 }
 
 

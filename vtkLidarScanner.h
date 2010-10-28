@@ -95,22 +95,24 @@ public:
   double* GetLocation() const; //convenience function
   vtkRay* GetRay(const double theta, const double phi) const;
 
-  //////////////Functions///////////
+  ////////////// Functions ///////////
   void AcquirePoint(const unsigned int thetaIndex, const unsigned int phiIndex); //do a single ray/scene intersection
 
   void PerformScan(); //actually do all of the ray/scene intersections
 
+  void AddNoise(vtkSmartPointer<vtkLidarPoint> point);
+  void CreateRepresentation(vtkPolyData*);
+  
+  // Outputs
   void GetValidOutputPoints(vtkPolyData* output); //put all of the valid scene intersections into a PolyData
   void GetAllOutputPoints(vtkPolyData* output); //put all returns (including misses) into a PolyData
   void GetOutputMesh(vtkPolyData* output); //put all of the valid scene intersections into a PolyData and connect them using Delaunay triangulation
-
-  void AddNoise(vtkSmartPointer<vtkLidarPoint> point);
+  void GetFullOutput(vtkImageData* output);
 
   void WriteScanner(const std::string &filename) const; //write a vtp file of a coordinate system indicating the scanner's location and orientation
 
-  void CreateRepresentation(vtkPolyData*);
-
 protected:
+
   vtkLidarScanner();
   ~vtkLidarScanner();
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *); //the function that makes this class work with the vtk pipeline
@@ -119,9 +121,6 @@ protected:
   void MakeSphericalGrid(); //use a uniform spherical spacing
   
   void ConstructOutput();
-
-  static const double Forward[3]; //the direction of the "default" scanner
-  static double Origin[3];
 
   unsigned int NumberOfThetaPoints; //the number of strips
   unsigned int NumberOfPhiPoints; //the number of points per strip
@@ -150,6 +149,11 @@ protected:
 
   double RepresentationLength;
 
+  // Static variables
+  // Initial orientation
+  static const double Forward[3]; //the direction of the "default" scanner
+  static double Origin[3]; //the location of the "default" scanner
+  
 private:
   vtkSmartPointer<vtkPolyData> Scene; //the mesh that is to be intersected
 
