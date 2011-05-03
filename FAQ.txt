@@ -1,0 +1,3 @@
+Q) I get a "fatal error: QVTKWidget.h: No such file or directory"
+A) You must build VTK with VTK_USE_QT=ON
+

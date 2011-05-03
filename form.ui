@@ -235,6 +235,19 @@
     <string>Scanning...</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="btnWritePTX">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>590</y>
+     <width>98</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Write PTX</string>
+   </property>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>

@@ -25,6 +25,7 @@ public slots:
   void btnSavePoints_clicked();
   void btnSaveFullOutput_clicked();
   void btnOpenFile_clicked();
+  void btnWritePTX_clicked();
 
   void SetScannerParameters();
 

@@ -1,36 +1,37 @@
 #include <limits>
+#include <fstream>
 
 #include "vtkRay.h"
 #include "vtkLidarPoint.h"
 #include "vtkLidarScanner.h"
 
-#include "vtkSmartPointer.h"
-#include "vtkImageData.h"
-#include "vtkConeSource.h"
-#include "vtkObjectFactory.h"
-#include "vtkIdList.h"
-#include "vtkPoints.h"
 #include "vtkCellArray.h"
+#include "vtkCellData.h"
+#include "vtkConeSource.h"
+#include "vtkDelaunay2D.h"
+#include "vtkDenseArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkFloatArray.h"
-#include "vtkUnsignedCharArray.h"
-#include "vtkPointData.h"
-#include "vtkTriangle.h"
-#include "vtkLine.h"
+#include "vtkIdList.h"
+#include "vtkImageData.h"
+#include "vtkImageReslice.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkLine.h"
+#include "vtkMath.h"
+#include "vtkModifiedBSPTree.h"
+#include "vtkObjectFactory.h"
+#include "vtkPolyData.h"
+#include "vtkPointData.h"
+#include "vtkPoints.h"
+#include "vtkSmartPointer.h"
 #include "vtkTransform.h"
 #include "vtkTransformPolyDataFilter.h"
-#include "vtkXMLPolyDataWriter.h"
-#include "vtkPolyData.h"
-#include "vtkCellData.h"
-#include "vtkDelaunay2D.h"
-#include "vtkModifiedBSPTree.h"
-#include "vtkMath.h"
-#include "vtkDenseArray.h"
+#include "vtkTriangle.h"
+#include "vtkUnsignedCharArray.h"
 #include "vtkVertexGlyphFilter.h"
-#include "vtkImageReslice.h"
 #include "vtkXMLImageDataWriter.h"
+#include "vtkXMLPolyDataWriter.h"
 
 vtkStandardNewMacro(vtkLidarScanner);
 
@@ -346,9 +347,9 @@ void vtkLidarScanner::ConstructOutput()
   depthArray->SetNumberOfTuples(this->NumberOfPhiPoints * this->NumberOfThetaPoints);
 
   vtkUnsignedCharArray* imageScalars = vtkUnsignedCharArray::SafeDownCast(this->Output->GetPointData()->GetArray("ImageScalars"));
-    
+
   std::cout << "should be " << this->NumberOfPhiPoints * this->NumberOfThetaPoints << " points." << std::endl;
-  
+
   for(unsigned int phi = 0; phi < this->NumberOfPhiPoints; phi++)
     {
     for(unsigned int theta = 0; theta < this->NumberOfThetaPoints; theta++)
@@ -363,16 +364,16 @@ void vtkLidarScanner::ConstructOutput()
       double n[3] = {0,0,0};
       unsigned char pixel[3] = {0,0,0};
       double depth = 0;
-      
+
       validArray->SetValue(index, this->Scan->GetValue(phi, theta)->GetHit());
-      
+
       if(this->Scan->GetValue(phi, theta)->GetHit())
         {
         this->Scan->GetValue(phi, theta)->GetCoordinate(coordinate);
         this->Scan->GetValue(phi, theta)->GetNormal(n);
         pixel[0] = 255; pixel[1] = 255; pixel[2] = 255; // We don't collect color, so set valid pixels to white
         depth = sqrt(vtkMath::Distance2BetweenPoints(coordinate, this->GetLocation()));
-        
+
         }
       else
         {
@@ -383,7 +384,7 @@ void vtkLidarScanner::ConstructOutput()
       normalArray->SetTupleValue(index, n);
       imageScalars->SetTupleValue(index, pixel);
       depthArray->SetValue(index, depth);
-      
+
       }
     }
 
@@ -511,6 +512,47 @@ void vtkLidarScanner::MakeSphericalGrid()
 void vtkLidarScanner::GetFullOutput(vtkImageData* output)
 {
   output = this->Output;
+}
+
+void vtkLidarScanner::WritePTX(std::string filename)
+{
+ // Open the file for writing
+  std::ofstream fout(filename.c_str(), ios::out);
+
+  fout << this->NumberOfPhiPoints << std::endl
+    << this->NumberOfThetaPoints << std::endl
+    << "0 0 0" << std::endl
+    << "1 0 0" << std::endl
+    << "0 1 0" << std::endl
+    << "0 0 1" << std::endl
+    << "1 0 0 0" << std::endl
+    << "0 1 0 0" << std::endl
+    << "0 0 1 0" << std::endl
+    << "0 0 0 1" << std::endl;
+
+  vtkIntArray* validArray = vtkIntArray::SafeDownCast(this->Output->GetPointData()->GetArray("ValidArray"));
+  assert(validArray);
+
+  vtkDoubleArray* coordinateArray = vtkDoubleArray::SafeDownCast(this->Output->GetPointData()->GetArray("CoordinateArray"));
+  assert(coordinateArray);
+
+  double coordinate[3];
+  for(unsigned int i = 0; i < this->NumberOfThetaPoints * this->NumberOfPhiPoints; i++)
+    {
+    // If the point is valid, write it to the file
+    if(validArray->GetValue(i))
+      {
+      double p[3];
+      this->Output->GetPoint(i,coordinate);
+      fout << coordinate[0] << " " << coordinate[1] << " " << coordinate[2] << " .5 0 0 0" << endl;
+      }
+    else
+      {
+      fout << "0 0 0 0 0 0 0" << endl;
+      }
+    }//end theta for loop
+
+  fout.close();
 }
 
 void vtkLidarScanner::GetOutputMesh(vtkPolyData* output)
@@ -1015,7 +1057,26 @@ void vtkLidarScanner::CreateRepresentation(vtkPolyData* representation)
     vtkSmartPointer<vtkPolyData>::New();
   pd->ShallowCopy(transformFilter->GetOutput());
   pd->SetPoints(points);
+  
+  // Setup two colors - one for each line
+  unsigned char red[3] = {255, 0, 0};
+  unsigned char green[3] = {0, 255, 0};
+  
+  // Setup the colors array
+  vtkSmartPointer<vtkUnsignedCharArray> colors =
+    vtkSmartPointer<vtkUnsignedCharArray>::New();
+  colors->SetNumberOfComponents(3);
+  colors->SetName("Colors");
+ 
+  // Add the colors we created to the colors array
+  colors->InsertNextTupleValue(green);
+  colors->InsertNextTupleValue(red);
+  colors->InsertNextTupleValue(green);
+  colors->InsertNextTupleValue(green);
+  colors->InsertNextTupleValue(green);
 
+  pd->GetCellData()->SetScalars(colors);
+  
   // Now that we have built the representation in the default coordinate system, transform it to the current scanner transformation
   vtkSmartPointer<vtkTransformPolyDataFilter> scannerTransformFilter =
     vtkSmartPointer<vtkTransformPolyDataFilter>::New();

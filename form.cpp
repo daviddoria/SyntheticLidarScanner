@@ -45,13 +45,14 @@ void Form::ConnectSlots()
   connect( this->ui.txtMaxPhiAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
   connect( this->ui.txtMaxPhiAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
 
+
   connect( this->ui.btnPreview, SIGNAL( clicked() ), this, SLOT(btnPreview_clicked()) );
   connect( this->ui.btnScan, SIGNAL( clicked() ), this, SLOT(btnScan_clicked()) );
 
   connect( this->ui.btnSavePoints, SIGNAL( clicked() ), this, SLOT(btnSavePoints_clicked()) );
   connect( this->ui.btnSaveFullOutput, SIGNAL( clicked() ), this, SLOT(btnSaveFullOutput_clicked()) );
   connect( this->ui.btnOpenFile, SIGNAL( clicked() ), this, SLOT(btnOpenFile_clicked()) );
-
+  connect( this->ui.btnWritePTX, SIGNAL( clicked()), this, SLOT(btnWritePTX_clicked()) );
 }
 
 Form::Form(int numArgs, char** args, QWidget *parent)
@@ -69,19 +70,19 @@ Form::Form(int numArgs, char** args, QWidget *parent)
   this->ui.progressBar->setMaximum(0);
   this->ui.progressBar->hide();
   this->ui.lblScanning->hide();
-  
+
   // This must come before the widget setup
   this->Renderer = vtkSmartPointer<vtkRenderer>::New();
   this->ui.qvtkWidget->GetRenderWindow()->AddRenderer(this->Renderer);
   this->Renderer->SetBackground(.5,.5,1);
-  
+
   this->ScannerStyle = vtkSmartPointer<ScannerInteractorStyle>::New();
   this->ScannerStyle->SetCurrentRenderer(this->Renderer);
   this->ScannerStyle->SetInteractor(this->ui.qvtkWidget->GetInteractor());
   this->ScannerStyle->Initialize();
 
   this->ui.qvtkWidget->GetInteractor()->SetInteractorStyle(this->ScannerStyle);
-  
+
   // GUI initializations
   this->ui.txtMinThetaAngle->setText(QString("-10"));
   this->ui.txtMaxThetaAngle->setText(QString("10"));
@@ -138,7 +139,7 @@ void Form::btnScan_clicked()
   // Start the progress bar
   this->ui.progressBar->show();
   this->ui.lblScanning->show();
-  
+
   // Get the parameters from the UI and set them in the LidarScanner object
   SetScannerParameters();
 
@@ -183,7 +184,27 @@ void Form::btnSavePoints_clicked()
     {
     std::cerr << "You must scan before you can save!" << std::endl;
     }
-  
+
+}
+
+
+void Form::btnWritePTX_clicked()
+{
+  // Set a filename to save
+  QString fileName = QFileDialog::getSaveFileName(this,
+     tr("Save Scan"), "/home/doriad", tr("Image Files (*.ptx)"));
+
+  std::cout << "Saving to " << fileName.toStdString() << "..." << std::endl;
+
+  if(this->ScannerStyle->Scan)
+    {
+    this->ScannerStyle->LidarScanner->WritePTX(fileName.toStdString());
+    }
+  else
+    {
+    std::cerr << "You must scan before you can save!" << std::endl;
+    }
+
 }
 
 void Form::btnSaveFullOutput_clicked()
@@ -219,7 +240,7 @@ void Form::btnPreview_clicked()
   this->ScannerStyle->LidarScannerActor->SetMapper(this->ScannerStyle->LidarScannerMapper);
   this->ScannerStyle->LidarScannerActor->GetProperty()->SetOpacity(.5);
   this->ScannerStyle->LidarScannerActor->GetProperty()->SetColor(224./255., 176./255., 1);
-  
+
   this->Renderer->AddActor(this->ScannerStyle->LidarScannerActor);
 
   this->Refresh();
@@ -237,7 +258,7 @@ void Form::btnOpenFile_clicked()
     {
     return;
     }
-    
+
   // Open the file
   vtkSmartPointer<vtkXMLPolyDataReader> reader =
     vtkSmartPointer<vtkXMLPolyDataReader>::New();

@@ -102,12 +102,13 @@ public:
 
   void AddNoise(vtkSmartPointer<vtkLidarPoint> point);
   void CreateRepresentation(vtkPolyData*);
-  
+
   // Outputs
   void GetValidOutputPoints(vtkPolyData* output); //put all of the valid scene intersections into a PolyData
   void GetAllOutputPoints(vtkPolyData* output); //put all returns (including misses) into a PolyData
   void GetOutputMesh(vtkPolyData* output); //put all of the valid scene intersections into a PolyData and connect them using Delaunay triangulation
   void GetFullOutput(vtkImageData* output);
+  void WritePTX(std::string filename);
 
   void WriteScanner(const std::string &filename) const; //write a vtp file of a coordinate system indicating the scanner's location and orientation
 
@@ -119,7 +120,7 @@ protected:
   int FillInputPortInformation( int port, vtkInformation* info );
 
   void MakeSphericalGrid(); //use a uniform spherical spacing
-  
+
   void ConstructOutput();
 
   unsigned int NumberOfThetaPoints; //the number of strips
@@ -153,7 +154,7 @@ protected:
   // Initial orientation
   static const double Forward[3]; //the direction of the "default" scanner
   static double Origin[3]; //the location of the "default" scanner
-  
+
 private:
   vtkSmartPointer<vtkPolyData> Scene; //the mesh that is to be intersected
 

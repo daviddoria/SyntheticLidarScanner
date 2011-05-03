@@ -2,8 +2,17 @@ cmake_minimum_required(VERSION 2.6)
 
 PROJECT(SyntheticLidarScanner)
 
+#FIND_PACKAGE(VTK 5.8 REQUIRED) #why doesn't this work?
+
 FIND_PACKAGE(VTK REQUIRED)
-INCLUDE(${VTK_USE_FILE})
+
+if(VTK_FOUND)
+  if("${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" LESS 5.8)
+    message(FATAL_ERROR "VTK is not a high enough version!")
+  else()
+    INCLUDE(${VTK_USE_FILE})
+  endif()
+endif()
 
 FIND_PACKAGE(Qt4 REQUIRED)
 INCLUDE(${QT_USE_FILE})
@@ -21,4 +30,4 @@ ${MOCSrcs} ${UISrcs}
 TARGET_LINK_LIBRARIES(SyntheticLidarScanner vtkHybrid vtkInfovis vtkViews ${QT_LIBRARIES} QVTK)
 
 ADD_EXECUTABLE(Example vtkLidarScannerExample.cxx vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx)
-TARGET_LINK_LIBRARIES(Example vtkHybrid vtkInfovis)
+TARGET_LINK_LIBRARIES(Example vtkHybrid vtkInfovis) #${VTK_LIBRARIES}
