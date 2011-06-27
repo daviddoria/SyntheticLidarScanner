@@ -1,10 +1,13 @@
+// STL
 #include <limits>
 #include <fstream>
 
+// Custom
 #include "vtkRay.h"
 #include "vtkLidarPoint.h"
 #include "vtkLidarScanner.h"
 
+// VTK
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
 #include "vtkConeSource.h"
@@ -290,7 +293,7 @@ int vtkLidarScanner::RequestData(vtkInformation *vtkNotUsed(request),
   {
   vtkSmartPointer<vtkXMLImageDataWriter> writer =
     vtkSmartPointer<vtkXMLImageDataWriter>::New();
-  writer->SetFileName("/home/doriad/scan.vti");
+  writer->SetFileName("scan.vti");
   writer->SetInput(this->Output);
   writer->Write();
   }
