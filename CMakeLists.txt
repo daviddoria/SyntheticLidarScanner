@@ -14,6 +14,10 @@ if(VTK_FOUND)
   endif()
 endif()
 
+if(NOT VTK_USE_QT)
+  message(FATAL_ERROR "You must compile VTK with VTK_USE_QT=ON.")
+endif(NOT VTK_USE_QT)
+
 FIND_PACKAGE(Qt4 REQUIRED)
 INCLUDE(${QT_USE_FILE})
 
