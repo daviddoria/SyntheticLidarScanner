@@ -30,4 +30,4 @@ ${MOCSrcs} ${UISrcs}
 TARGET_LINK_LIBRARIES(SyntheticLidarScanner vtkHybrid vtkInfovis vtkViews ${QT_LIBRARIES} QVTK)
 
 ADD_EXECUTABLE(Example vtkLidarScannerExample.cxx vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx)
-TARGET_LINK_LIBRARIES(Example vtkHybrid vtkInfovis) #${VTK_LIBRARIES}
+TARGET_LINK_LIBRARIES(Example ${VTK_LIBRARIES})
