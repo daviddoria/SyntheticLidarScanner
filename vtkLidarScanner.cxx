@@ -60,11 +60,25 @@ vtkStandardNewMacro(vtkLidarScanner);
 const double vtkLidarScanner::Forward[3] = {0.0, 1.0, 0.0};
 double vtkLidarScanner::Origin[3] = {0.0, 0.0, 0.0};
 
-double* vtkLidarScanner::GetLocation() const {return this->GetPosition();} //convenience function
+double* vtkLidarScanner::GetLocation() const
+{
+  return this->GetPosition();
+} //convenience function
 
-double vtkLidarScanner::GetPhiStep() const {return fabs(MaxPhiAngle - MinPhiAngle)/static_cast<double> (NumberOfPhiPoints - 1);}
-double vtkLidarScanner::GetThetaStep() const {return fabs(MaxThetaAngle - MinThetaAngle)/static_cast<double>(NumberOfThetaPoints - 1);}
-double vtkLidarScanner::GetNumberOfTotalPoints() const {return NumberOfPhiPoints * NumberOfThetaPoints;}
+double vtkLidarScanner::GetPhiStep() const
+{
+  return fabs(MaxPhiAngle - MinPhiAngle)/static_cast<double> (NumberOfPhiPoints - 1);
+}
+
+double vtkLidarScanner::GetThetaStep() const
+{
+  return fabs(MaxThetaAngle - MinThetaAngle)/static_cast<double>(NumberOfThetaPoints - 1);
+}
+
+double vtkLidarScanner::GetNumberOfTotalPoints() const
+{
+  return NumberOfPhiPoints * NumberOfThetaPoints;
+}
 
 vtkLidarScanner::vtkLidarScanner()
 {
@@ -144,22 +158,22 @@ vtkLidarScanner::~vtkLidarScanner()
 }
 
 // Convenience functions for setting values from degrees.
-void vtkLidarScanner::SetMinPhiAngleDegrees(double deg)
+void vtkLidarScanner::SetMinPhiAngleDegrees(const double deg)
 {
   this->SetMinPhiAngle(vtkMath::RadiansFromDegrees(deg));
 }
 
-void vtkLidarScanner::SetMaxPhiAngleDegrees(double deg)
+void vtkLidarScanner::SetMaxPhiAngleDegrees(const double deg)
 {
   this->SetMaxPhiAngle(vtkMath::RadiansFromDegrees(deg));
 }
 
-void vtkLidarScanner::SetMinThetaAngleDegrees(double deg)
+void vtkLidarScanner::SetMinThetaAngleDegrees(const double deg)
 {
   this->SetMinThetaAngle(vtkMath::RadiansFromDegrees(deg));
 }
 
-void vtkLidarScanner::SetMaxThetaAngleDegrees(double deg)
+void vtkLidarScanner::SetMaxThetaAngleDegrees(const double deg)
 {
   this->SetMaxThetaAngle(vtkMath::RadiansFromDegrees(deg));
 }
@@ -530,12 +544,12 @@ void vtkLidarScanner::MakeSphericalGrid()
 
 }
 
-void vtkLidarScanner::GetFullOutput(vtkImageData* output)
+vtkImageData* vtkLidarScanner::GetFullOutput()
 {
-  output = this->Output;
+  return this->Output;
 }
 
-void vtkLidarScanner::WritePTX(std::string filename)
+void vtkLidarScanner::WritePTX(const std::string& filename)
 {
  // Open the file for writing
   std::ofstream fout(filename.c_str(), ios::out);
@@ -576,7 +590,7 @@ void vtkLidarScanner::WritePTX(std::string filename)
   fout.close();
 }
 
-void vtkLidarScanner::GetOutputMesh(vtkPolyData* output)
+void vtkLidarScanner::GetOutputMesh(vtkPolyData* const output)
 {
   // std::cout << "GetOutputMesh" << std::endl;
   // This function connects the raw points output into a mesh using the connectivity
@@ -686,7 +700,7 @@ void vtkLidarScanner::GetOutputMesh(vtkPolyData* output)
 
 }
 
-void vtkLidarScanner::GetValidOutputPoints(vtkPolyData* output)
+void vtkLidarScanner::GetValidOutputPoints(vtkPolyData* const output)
 {
   //std::cout << "GetOutputPoints" << std::endl;
 
@@ -770,8 +784,7 @@ void vtkLidarScanner::GetValidOutputPoints(vtkPolyData* output)
 
 }
 
-
-void vtkLidarScanner::GetAllOutputPoints(vtkPolyData* output)
+void vtkLidarScanner::GetAllOutputPoints(vtkPolyData* const output)
 {
   vtkSmartPointer<vtkPoints> points =
     vtkSmartPointer<vtkPoints>::New();
@@ -965,7 +978,7 @@ void vtkLidarScanner::AddNoise(vtkSmartPointer<vtkLidarPoint> point)
   point->SetCoordinate(newPoint);
 }
 
-void GetOrthogonalVector(const double* v, double* orthogonalVector)
+void GetOrthogonalVector(const double* const v, double* const orthogonalVector)
 {
   //Gram Schmidt Orthogonalization
 
@@ -985,7 +998,7 @@ void GetOrthogonalVector(const double* v, double* orthogonalVector)
 
 }
 
-void Project(const double* a, const double* b, double* projection)
+void Project(const double* const a, const double* const b, double* const projection)
 {
   // The projection of A on B
   double scale = vtkMath::Dot(a,b)/pow(vtkMath::Norm(b), 2);
@@ -996,7 +1009,7 @@ void Project(const double* a, const double* b, double* projection)
 
 }
 
-void vtkLidarScanner::CreateRepresentation(vtkPolyData* representation)
+void vtkLidarScanner::CreateRepresentation(vtkPolyData* const representation)
 {
   vtkSmartPointer<vtkConeSource> coneSource =
     vtkSmartPointer<vtkConeSource>::New();
@@ -1138,7 +1151,7 @@ void vtkLidarScanner::PrintSelf(ostream &os, vtkIndent indent)
 
 namespace
 {
-  int sign(double v)
+  int sign(const double v)
   {
   return v > 0 ? 1 : (v < 0 ? -1 : 0);
   }
