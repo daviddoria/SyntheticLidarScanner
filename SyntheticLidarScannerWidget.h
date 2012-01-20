@@ -27,7 +27,7 @@ class vtkRenderer;
 
 class ScannerInteractorStyle;
 
-class SyntheticLidarScannerWidget : public QMainWindow
+class SyntheticLidarScannerWidget : public QMainWindow, public Ui::SyntheticLidarScannerWidget
 {
   Q_OBJECT
 
@@ -48,7 +48,6 @@ public slots:
   void SetScannerParameters();
 
 private:
-  Ui::SyntheticLidarScannerWidget ui;
 
   void ConnectSlots();
 

@@ -54,17 +54,17 @@
 void SyntheticLidarScannerWidget::ConnectSlots()
 {
   // The text boxes for the angles should update the display
-  connect( this->ui.txtMinThetaAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
-  connect( this->ui.txtMinThetaAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
-  connect( this->ui.txtMaxThetaAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
-  connect( this->ui.txtMaxThetaAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
-  connect( this->ui.txtMinPhiAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
-  connect( this->ui.txtMinPhiAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
-  connect( this->ui.txtMaxPhiAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
-  connect( this->ui.txtMaxPhiAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
+  connect( this->txtMinThetaAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
+  connect( this->txtMinThetaAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
+  connect( this->txtMaxThetaAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
+  connect( this->txtMaxThetaAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
+  connect( this->txtMinPhiAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
+  connect( this->txtMinPhiAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
+  connect( this->txtMaxPhiAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
+  connect( this->txtMaxPhiAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
 
-  connect( this->ui.btnPreview, SIGNAL( clicked() ), this, SLOT(btnPreview_clicked()) );
-  connect( this->ui.btnScan, SIGNAL( clicked() ), this, SLOT(btnScan_clicked()) );
+  connect( this->btnPreview, SIGNAL( clicked() ), this, SLOT(btnPreview_clicked()) );
+  connect( this->btnScan, SIGNAL( clicked() ), this, SLOT(btnScan_clicked()) );
 }
 
 SyntheticLidarScannerWidget::SyntheticLidarScannerWidget(int numArgs, char** args, QWidget *parent)
@@ -75,35 +75,35 @@ SyntheticLidarScannerWidget::SyntheticLidarScannerWidget(int numArgs, char** arg
   this->argv = args;
 
   // This must be called first.
-  ui.setupUi(this);
+  this->setupUi(this);
 
   // Set the progress bar to maruee mode
-  this->ui.progressBar->setMinimum(0);
-  this->ui.progressBar->setMaximum(0);
-  this->ui.progressBar->hide();
-  this->ui.lblScanning->hide();
+  this->progressBar->setMinimum(0);
+  this->progressBar->setMaximum(0);
+  this->progressBar->hide();
+  this->lblScanning->hide();
 
   // This must come before the widget setup
   this->Renderer = vtkSmartPointer<vtkRenderer>::New();
-  this->ui.qvtkWidget->GetRenderWindow()->AddRenderer(this->Renderer);
+  this->qvtkWidget->GetRenderWindow()->AddRenderer(this->Renderer);
   this->Renderer->SetBackground(.5,.5,1);
 
   this->ScannerStyle = vtkSmartPointer<ScannerInteractorStyle>::New();
   this->ScannerStyle->SetCurrentRenderer(this->Renderer);
-  this->ScannerStyle->SetInteractor(this->ui.qvtkWidget->GetInteractor());
+  this->ScannerStyle->SetInteractor(this->qvtkWidget->GetInteractor());
   this->ScannerStyle->Initialize();
 
-  this->ui.qvtkWidget->GetInteractor()->SetInteractorStyle(this->ScannerStyle);
+  this->qvtkWidget->GetInteractor()->SetInteractorStyle(this->ScannerStyle);
 
   // GUI initializations
-  this->ui.txtMinThetaAngle->setText(QString("-10"));
-  this->ui.txtMaxThetaAngle->setText(QString("10"));
+  this->txtMinThetaAngle->setText(QString("-10"));
+  this->txtMaxThetaAngle->setText(QString("10"));
 
-  this->ui.txtMinPhiAngle->setText(QString("-10"));
-  this->ui.txtMaxPhiAngle->setText(QString("10"));
+  this->txtMinPhiAngle->setText(QString("-10"));
+  this->txtMaxPhiAngle->setText(QString("10"));
 
-  this->ui.txtNumberOfThetaPoints->setText(QString("10"));
-  this->ui.txtNumberOfPhiPoints->setText(QString("10"));
+  this->txtNumberOfThetaPoints->setText(QString("10"));
+  this->txtNumberOfPhiPoints->setText(QString("10"));
 
   this->ConnectSlots();
 
@@ -114,43 +114,43 @@ SyntheticLidarScannerWidget::SyntheticLidarScannerWidget(int numArgs, char** arg
 void SyntheticLidarScannerWidget::ResetAndRefresh()
 {
   // Refresh
-  this->ui.qvtkWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->ResetCamera();
+  this->qvtkWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->ResetCamera();
 
-  this->ui.qvtkWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->Render();
+  this->qvtkWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->Render();
 
-  this->ui.qvtkWidget->GetRenderWindow()->Render();
+  this->qvtkWidget->GetRenderWindow()->Render();
 
 }
 
 void SyntheticLidarScannerWidget::Refresh()
 {
   // Refresh
-  this->ui.qvtkWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->Render();
+  this->qvtkWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->Render();
 
-  this->ui.qvtkWidget->GetRenderWindow()->Render();
+  this->qvtkWidget->GetRenderWindow()->Render();
 
 }
 
 void SyntheticLidarScannerWidget::SetScannerParameters()
 {
-  this->ScannerStyle->LidarScanner->SetMinPhiAngleDegrees(this->ui.txtMinPhiAngle->text().toDouble());
+  this->ScannerStyle->LidarScanner->SetMinPhiAngleDegrees(this->txtMinPhiAngle->text().toDouble());
 
-  this->ScannerStyle->LidarScanner->SetMaxPhiAngleDegrees(this->ui.txtMaxPhiAngle->text().toDouble());
+  this->ScannerStyle->LidarScanner->SetMaxPhiAngleDegrees(this->txtMaxPhiAngle->text().toDouble());
 
-  this->ScannerStyle->LidarScanner->SetMinThetaAngleDegrees(this->ui.txtMinThetaAngle->text().toDouble());
+  this->ScannerStyle->LidarScanner->SetMinThetaAngleDegrees(this->txtMinThetaAngle->text().toDouble());
 
-  this->ScannerStyle->LidarScanner->SetMaxThetaAngleDegrees(this->ui.txtMaxThetaAngle->text().toDouble());
+  this->ScannerStyle->LidarScanner->SetMaxThetaAngleDegrees(this->txtMaxThetaAngle->text().toDouble());
 
-  this->ScannerStyle->LidarScanner->SetNumberOfThetaPoints(this->ui.txtNumberOfThetaPoints->text().toUInt());
+  this->ScannerStyle->LidarScanner->SetNumberOfThetaPoints(this->txtNumberOfThetaPoints->text().toUInt());
 
-  this->ScannerStyle->LidarScanner->SetNumberOfPhiPoints(this->ui.txtNumberOfPhiPoints->text().toUInt());
+  this->ScannerStyle->LidarScanner->SetNumberOfPhiPoints(this->txtNumberOfPhiPoints->text().toUInt());
 }
 
 void SyntheticLidarScannerWidget::btnScan_clicked()
 {
   // Start the progress bar
-  this->ui.progressBar->show();
-  this->ui.lblScanning->show();
+  this->progressBar->show();
+  this->lblScanning->show();
 
   // Get the parameters from the UI and set them in the LidarScanner object
   SetScannerParameters();
@@ -172,8 +172,8 @@ void SyntheticLidarScannerWidget::btnScan_clicked()
   this->Refresh();
 
   // Stop the progress bar
-  this->ui.progressBar->hide();
-  this->ui.lblScanning->hide();
+  this->progressBar->hide();
+  this->lblScanning->hide();
 }
 
 void SyntheticLidarScannerWidget::on_actionSavePoints_activated()
