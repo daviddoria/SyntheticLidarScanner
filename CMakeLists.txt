@@ -14,13 +14,16 @@ if(VTK_FOUND)
   endif()
 endif()
 
+add_library(LidarScanner vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx)
+target_link_libraries(LidarScanner ${VTK_LIBRARIES})
+
 # Demo (programmatically generate data and set parameters)
-ADD_EXECUTABLE(LidarScannerDemo LidarScannerDemo.cpp vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx)
-TARGET_LINK_LIBRARIES(LidarScannerDemo ${VTK_LIBRARIES})
+ADD_EXECUTABLE(LidarScannerDemo LidarScannerDemo.cpp)
+TARGET_LINK_LIBRARIES(LidarScannerDemo ${VTK_LIBRARIES} LidarScanner)
 
 # Non-interactive version
-ADD_EXECUTABLE(LidarScannerNonInteractive LidarScannerNonInteractive.cpp vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx)
-TARGET_LINK_LIBRARIES(LidarScannerNonInteractive ${VTK_LIBRARIES})
+ADD_EXECUTABLE(LidarScannerNonInteractive LidarScannerNonInteractive.cpp)
+TARGET_LINK_LIBRARIES(LidarScannerNonInteractive ${VTK_LIBRARIES} LidarScanner)
 
 # Interactive version
 SET(BuildInteractive CACHE BOOL "Build the interactive version.")
@@ -40,12 +43,12 @@ if(BuildInteractive)
     QT4_WRAP_UI(UISrcs SyntheticLidarScannerWidget.ui)
     QT4_WRAP_CPP(MOCSrcs SyntheticLidarScannerWidget.h)
 
-    ADD_EXECUTABLE(SyntheticLidarScanner SyntheticLidarScanner.cpp vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx
+    ADD_EXECUTABLE(SyntheticLidarScanner SyntheticLidarScanner.cpp
     SyntheticLidarScannerWidget.cpp
     ScannerInteractorStyle.cxx
     ${MOCSrcs} ${UISrcs}
     )
-    TARGET_LINK_LIBRARIES(SyntheticLidarScanner ${VTK_LIBRARIES} ${QT_LIBRARIES} QVTK)
+    TARGET_LINK_LIBRARIES(SyntheticLidarScanner ${VTK_LIBRARIES} ${QT_LIBRARIES} QVTK LidarScanner)
   elseif(QT4_FOUND)
     message ( "QT4 NOT found successfully." )
   endif(QT4_FOUND)
