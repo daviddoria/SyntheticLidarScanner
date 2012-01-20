@@ -14,9 +14,13 @@ if(VTK_FOUND)
   endif()
 endif()
 
+# Demo (programmatically generate data and set parameters)
+ADD_EXECUTABLE(LidarScannerDemo LidarScannerDemo.cpp vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx)
+TARGET_LINK_LIBRARIES(LidarScannerDemo ${VTK_LIBRARIES})
+
 # Non-interactive version
-ADD_EXECUTABLE(Example vtkLidarScannerExample.cxx vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx)
-TARGET_LINK_LIBRARIES(Example ${VTK_LIBRARIES})
+ADD_EXECUTABLE(LidarScannerNonInteractive LidarScannerNonInteractive.cpp vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx)
+TARGET_LINK_LIBRARIES(LidarScannerNonInteractive ${VTK_LIBRARIES})
 
 # Interactive version
 SET(BuildInteractive CACHE BOOL "Build the interactive version.")
