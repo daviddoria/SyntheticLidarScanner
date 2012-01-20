@@ -16,26 +16,26 @@
  *
  *=========================================================================*/
 
-#include <vector>
-#include <sstream>
-
+// Custom
 #include "vtkLidarScanner.h"
 #include "vtkLidarPoint.h"
 
-#include <vtkSmartPointer.h>
+// VTK
+#include <vtkCubeSource.h>
 #include <vtkImageData.h>
 #include <vtkMath.h>
 #include <vtkPolyData.h>
-#include <vtkXMLPolyDataReader.h>
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
+#include <vtkTransform.h>
+#include <vtkTriangleFilter.h>
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkXMLImageDataWriter.h>
-#include <vtkTransform.h>
-#include <vtkSphereSource.h>
 
 int main(int argc, char* argv[])
 {
   bool createMesh = true;
-  
+
   // Convert strings to doubles
   double tx = 0;
   double ty = -2;
@@ -43,43 +43,51 @@ int main(int argc, char* argv[])
   double rx = 0;
   double ry = 0;
   double rz = 0;
-  
+
   unsigned int thetaPoints = 2;
   unsigned int phiPoints = 3;
-  
+
   double thetaSpan = .3;
   double phiSpan = .3;
-  
+
   bool storeRays = true;
-  
-  // Create a sphere
-  vtkSmartPointer<vtkSphereSource> sphereSource = 
-    vtkSmartPointer<vtkSphereSource>::New();
-  sphereSource->Update();
-  
+
+  // Create an object
+//   vtkSmartPointer<vtkSphereSource> inputSource =
+//     vtkSmartPointer<vtkSphereSource>::New();
+//   inputSource->Update();
+
+  vtkSmartPointer<vtkCubeSource> cubeSource =
+    vtkSmartPointer<vtkCubeSource>::New();
+  cubeSource->Update();
+
+  vtkSmartPointer<vtkTriangleFilter> inputSource = vtkSmartPointer<vtkTriangleFilter>::New();
+  inputSource->SetInputConnection(cubeSource->GetOutputPort());
+  inputSource->Update();
+
   {
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = 
     vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName("ExampleInput.vtp");
-  writer->SetInputConnection(sphereSource->GetOutputPort());
+  writer->SetInputConnection(inputSource->GetOutputPort());
   writer->Write();
   }
-  
+
   // Construct a vtkLidarScanner and set all of its parameters
   vtkSmartPointer<vtkLidarScanner> scanner = 
     vtkSmartPointer<vtkLidarScanner>::New();
-  
+
   //Scanner->WriteScanner("scanner_original.vtp");
-          
+
   //double testAngle = vtkMath::Pi()/4.0;
   scanner->SetPhiSpan(phiSpan);
   scanner->SetThetaSpan(thetaSpan);
-          
+
   scanner->SetNumberOfThetaPoints(thetaPoints);
   scanner->SetNumberOfPhiPoints(phiPoints);
-  
+
   scanner->SetStoreRays(storeRays);
-  
+
   // "Aim" the scanner.  This is a very simple translation, but any transformation will work
   vtkSmartPointer<vtkTransform> transform = 
     vtkSmartPointer<vtkTransform>::New();
@@ -88,13 +96,13 @@ int main(int argc, char* argv[])
   transform->RotateY(ry);
   transform->RotateZ(rz);
   transform->Translate(tx, ty, tz);
-  
+
   scanner->SetTransform(transform);
   scanner->WriteScanner("scanner_transformed.vtp");
-  
+
   scanner->SetCreateMesh(createMesh);
-  
-  scanner->SetInputConnection(sphereSource->GetOutputPort());
+
+  scanner->SetInputConnection(inputSource->GetOutputPort());
   scanner->Update();
 
   std::cout << "Before writer " << scanner->GetOutput()->GetNumberOfPoints() << " Points." << std::endl;
@@ -110,14 +118,23 @@ int main(int argc, char* argv[])
       }
     std::cout << std::endl;
     }
-    
-  //std::cout << *(scanner->GetOutput() ) << std::endl;
-  // Create a writer and write the output vtp file
-  vtkSmartPointer<vtkXMLImageDataWriter> writer =
+
+  // Write the output vti file
+  vtkSmartPointer<vtkXMLImageDataWriter> vtiWriter =
     vtkSmartPointer<vtkXMLImageDataWriter>::New();
-  writer->SetFileName("ExampleScan.vti");
-  writer->SetInputConnection(scanner->GetOutputPort());
-  writer->Write();
+  vtiWriter->SetFileName("Scan.vti");
+  vtiWriter->SetInputConnection(scanner->GetOutputPort());
+  vtiWriter->Write();
+
+  // Write the output vtp file
+  vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+  scanner->GetAllOutputPoints(polyData);
+  std::cout << "There are " << polyData->GetNumberOfPoints() << " output points." << std::endl;
+  vtkSmartPointer<vtkXMLPolyDataWriter> vtpWriter =
+    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+  vtpWriter->SetFileName("Scan.vtp");
+  vtpWriter->SetInputConnection(polyData->GetProducerPort());
+  vtpWriter->Write();
 
   return EXIT_SUCCESS;
 }
