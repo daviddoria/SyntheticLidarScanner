@@ -16,10 +16,10 @@
  *
  *=========================================================================*/
 
-#ifndef FORM_H
-#define FORM_H
+#ifndef SyntheticLidarScannerWidget_H
+#define SyntheticLidarScannerWidget_H
 
-#include "ui_form.h"
+#include "ui_SyntheticLidarScannerWidget.h"
 
 #include "vtkSmartPointer.h"
 
@@ -27,12 +27,12 @@ class vtkRenderer;
 
 class ScannerInteractorStyle;
 
-class Form : public QWidget
+class SyntheticLidarScannerWidget : public QWidget
 {
   Q_OBJECT
 
 public:
-  Form(int argc, char** argv, QWidget *parent = 0 );
+  SyntheticLidarScannerWidget(int argc, char** argv, QWidget *parent = 0 );
   int argc;
   char** argv;
 
@@ -48,7 +48,7 @@ public slots:
   void SetScannerParameters();
 
 private:
-  Ui::Form ui;
+  Ui::SyntheticLidarScannerWidget ui;
 
   void ConnectSlots();
 

@@ -20,7 +20,7 @@
 #include <QFileDialog>
 #include <QString>
 
-#include "form.h"
+#include "SyntheticLidarScannerWidget.h"
 
 #include <vtkActor.h>
 #include <vtkAxesActor.h>
@@ -51,7 +51,7 @@
 
 #include <sstream>
 
-void Form::ConnectSlots()
+void SyntheticLidarScannerWidget::ConnectSlots()
 {
   // The text boxes for the angles should update the display
   connect( this->ui.txtMinThetaAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
@@ -73,7 +73,7 @@ void Form::ConnectSlots()
   connect( this->ui.btnWritePTX, SIGNAL( clicked()), this, SLOT(btnWritePTX_clicked()) );
 }
 
-Form::Form(int numArgs, char** args, QWidget *parent)
+SyntheticLidarScannerWidget::SyntheticLidarScannerWidget(int numArgs, char** args, QWidget *parent)
     : QWidget(parent)
 {
 
@@ -117,7 +117,7 @@ Form::Form(int numArgs, char** args, QWidget *parent)
 }
 
 
-void Form::ResetAndRefresh()
+void SyntheticLidarScannerWidget::ResetAndRefresh()
 {
   // Refresh
   this->ui.qvtkWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->ResetCamera();
@@ -128,7 +128,7 @@ void Form::ResetAndRefresh()
 
 }
 
-void Form::Refresh()
+void SyntheticLidarScannerWidget::Refresh()
 {
   // Refresh
   this->ui.qvtkWidget->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->Render();
@@ -137,7 +137,7 @@ void Form::Refresh()
 
 }
 
-void Form::SetScannerParameters()
+void SyntheticLidarScannerWidget::SetScannerParameters()
 {
   this->ScannerStyle->LidarScanner->SetMinPhiAngleDegrees(this->ui.txtMinPhiAngle->text().toDouble());
 
@@ -152,7 +152,7 @@ void Form::SetScannerParameters()
   this->ScannerStyle->LidarScanner->SetNumberOfPhiPoints(this->ui.txtNumberOfPhiPoints->text().toUInt());
 }
 
-void Form::btnScan_clicked()
+void SyntheticLidarScannerWidget::btnScan_clicked()
 {
   // Start the progress bar
   this->ui.progressBar->show();
@@ -182,7 +182,7 @@ void Form::btnScan_clicked()
   this->ui.lblScanning->hide();
 }
 
-void Form::btnSavePoints_clicked()
+void SyntheticLidarScannerWidget::btnSavePoints_clicked()
 {
   // Set a filename to save
   QString fileName = QFileDialog::getSaveFileName(this,
@@ -206,7 +206,7 @@ void Form::btnSavePoints_clicked()
 }
 
 
-void Form::btnWritePTX_clicked()
+void SyntheticLidarScannerWidget::btnWritePTX_clicked()
 {
   // Set a filename to save
   QString fileName = QFileDialog::getSaveFileName(this,
@@ -225,7 +225,7 @@ void Form::btnWritePTX_clicked()
 
 }
 
-void Form::btnSaveFullOutput_clicked()
+void SyntheticLidarScannerWidget::btnSaveFullOutput_clicked()
 {
   // Set a filename to save
   QString fileName = QFileDialog::getSaveFileName(this,
@@ -249,7 +249,7 @@ void Form::btnSaveFullOutput_clicked()
 }
 
 
-void Form::btnPreview_clicked()
+void SyntheticLidarScannerWidget::btnPreview_clicked()
 {
   SetScannerParameters();
 
@@ -264,7 +264,7 @@ void Form::btnPreview_clicked()
   this->Refresh();
 }
 
-void Form::btnOpenFile_clicked()
+void SyntheticLidarScannerWidget::btnOpenFile_clicked()
 {
   // Get a filename to open
   QString fileName = QFileDialog::getOpenFileName(this,

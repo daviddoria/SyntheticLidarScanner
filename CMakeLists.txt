@@ -33,15 +33,15 @@ if(BuildInteractive)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
-    QT4_WRAP_UI(UISrcs form.ui)
-    QT4_WRAP_CPP(MOCSrcs form.h)
+    QT4_WRAP_UI(UISrcs SyntheticLidarScannerWidget.ui)
+    QT4_WRAP_CPP(MOCSrcs SyntheticLidarScannerWidget.h)
 
     ADD_EXECUTABLE(SyntheticLidarScanner SyntheticLidarScanner.cpp vtkLidarScanner.cxx vtkRay.cxx vtkLidarPoint.cxx vtkPTXWriter.cxx
-    form.cpp
+    SyntheticLidarScannerWidget.cpp
     ScannerInteractorStyle.cxx
     ${MOCSrcs} ${UISrcs}
     )
-    TARGET_LINK_LIBRARIES(SyntheticLidarScanner vtkHybrid vtkInfovis vtkViews ${QT_LIBRARIES} QVTK)
+    TARGET_LINK_LIBRARIES(SyntheticLidarScanner ${VTK_LIBRARIES} ${QT_LIBRARIES} QVTK)
   elseif(QT4_FOUND)
     message ( "QT4 NOT found successfully." )
   endif(QT4_FOUND)

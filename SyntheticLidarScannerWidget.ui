@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>SyntheticLidarScannerWidget</class>
+ <widget class="QWidget" name="SyntheticLidarScannerWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -22,7 +22,7 @@
   <property name="styleSheet">
    <string notr="true"/>
   </property>
-  <widget class="QVTKWidget" name="qvtkWidget" native="true">
+  <widget class="QVTKWidget" name="qvtkWidget">
    <property name="geometry">
     <rect>
      <x>240</x>

@@ -18,14 +18,14 @@
 
 #include <QApplication>
 
-#include "form.h"
+#include "SyntheticLidarScannerWidget.h"
 
 int main(int argc, char *argv[])
 {
   QApplication app(argc, argv);
-  Form form(argc,argv);
+  SyntheticLidarScannerWidget syntheticLidarScannerWidget(argc,argv);
 
-  form.show();
+  syntheticLidarScannerWidget.show();
   return app.exec();
 }
 
