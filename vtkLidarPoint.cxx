@@ -22,7 +22,6 @@
 #include "vtkSmartPointer.h"
 #include "vtkObjectFactory.h" //for new() macro
 
-vtkCxxRevisionMacro(vtkLidarPoint, "$Revision: 1.1 $");
 vtkStandardNewMacro(vtkLidarPoint);
 
 vtkLidarPoint::vtkLidarPoint()

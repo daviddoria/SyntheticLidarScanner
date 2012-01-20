@@ -33,7 +33,7 @@ class vtkLidarPoint : public vtkObject
 {
 public:
   static vtkLidarPoint *New();
-  vtkTypeRevisionMacro(vtkLidarPoint,vtkObject);
+  vtkTypeMacro(vtkLidarPoint,vtkObject);
   void PrintSelf(std::ostream &os, vtkIndent indent);
 
   ////////// Accessors ///////////
@@ -48,7 +48,7 @@ public:
   void SetRay(vtkRay* ray);// set the ray that was/will be cast into the scene
   vtkSetVector3Macro(Normal,double); //save the normal of the scene's triangle that the ray intersected
   vtkSetMacro(Hit,bool); //set whether or not the LidarPoint is valid
-		
+
 protected:
 
   vtkLidarPoint();
