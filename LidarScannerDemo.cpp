@@ -52,18 +52,24 @@ int main(int argc, char* argv[])
 
   bool storeRays = true;
 
-  // Create an object
+  // Sphere source
 //   vtkSmartPointer<vtkSphereSource> inputSource =
 //     vtkSmartPointer<vtkSphereSource>::New();
 //   inputSource->Update();
 
-  vtkSmartPointer<vtkCubeSource> cubeSource =
+  // Cube source
+  vtkSmartPointer<vtkCubeSource> inputSource =
     vtkSmartPointer<vtkCubeSource>::New();
-  cubeSource->Update();
-
-  vtkSmartPointer<vtkTriangleFilter> inputSource = vtkSmartPointer<vtkTriangleFilter>::New();
-  inputSource->SetInputConnection(cubeSource->GetOutputPort());
   inputSource->Update();
+
+  // Cube source with conversion to triangles.
+//   vtkSmartPointer<vtkCubeSource> cubeSource =
+//     vtkSmartPointer<vtkCubeSource>::New();
+//   cubeSource->Update();
+// 
+//   vtkSmartPointer<vtkTriangleFilter> inputSource = vtkSmartPointer<vtkTriangleFilter>::New();
+//   inputSource->SetInputConnection(cubeSource->GetOutputPort());
+//   inputSource->Update();
 
   {
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = 

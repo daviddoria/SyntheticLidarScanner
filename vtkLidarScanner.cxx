@@ -303,7 +303,7 @@ vtkTransform* vtkLidarScanner::GetTransform()
 }
 
 int vtkLidarScanner::RequestData(vtkInformation *vtkNotUsed(request),
-		vtkInformationVector **inputVector,
+                                 vtkInformationVector **inputVector,
   vtkInformationVector *outputVector)
 {
   // Get the info objects
@@ -322,13 +322,13 @@ int vtkLidarScanner::RequestData(vtkInformation *vtkNotUsed(request),
 
   this->ConstructOutput();
 
-  {
-  vtkSmartPointer<vtkXMLImageDataWriter> writer =
-    vtkSmartPointer<vtkXMLImageDataWriter>::New();
-  writer->SetFileName("scan.vti");
-  writer->SetInput(this->Output);
-  writer->Write();
-  }
+//   {
+//   vtkSmartPointer<vtkXMLImageDataWriter> writer =
+//     vtkSmartPointer<vtkXMLImageDataWriter>::New();
+//   writer->SetFileName("scan.vti");
+//   writer->SetInput(this->Output);
+//   writer->Write();
+//   }
 
   output->ShallowCopy(this->Output);
   //output->SetUpdateExtent(output->GetExtent());
@@ -459,23 +459,28 @@ void vtkLidarScanner::AcquirePoint(const unsigned int thetaIndex, const unsigned
     return;
     }
 
-  vtkPoints* triPoints = vtkTriangle::SafeDownCast(this->Scene->GetCell(cellId))->GetPoints();
+  // If the cell is a triangle, we can compute it's normal.
+  vtkTriangle* triangle = vtkTriangle::SafeDownCast(this->Scene->GetCell(cellId));
 
-  double n[3];
-  double t0[3];
-  double t1[3];
-  double t2[3];
+  if(triangle)
+    {
+    vtkPoints* triPoints = triangle->GetPoints();
+    double n[3];
+    double t0[3];
+    double t1[3];
+    double t2[3];
 
-  triPoints->GetPoint(0, t0);
-  triPoints->GetPoint(1, t1);
-  triPoints->GetPoint(2, t2);
-  vtkTriangle::ComputeNormal(t0, t1, t2, n);
+    triPoints->GetPoint(0, t0);
+    triPoints->GetPoint(1, t1);
+    triPoints->GetPoint(2, t2);
+    vtkTriangle::ComputeNormal(t0, t1, t2, n);
+
+    // Save the normal of the intersection
+    this->Scan->GetValue(phiIndex, thetaIndex)->SetNormal(n);
+    }
 
   // Save the intersection
   this->Scan->GetValue(phiIndex,thetaIndex)->SetCoordinate(x);
-
-  // Save the normal of the intersection
-  this->Scan->GetValue(phiIndex, thetaIndex)->SetNormal(n);
 
   // Set the flag for this point indicating that there was a valid intersection
   this->Scan->GetValue(phiIndex, thetaIndex)->SetHit(true);
@@ -483,7 +488,6 @@ void vtkLidarScanner::AcquirePoint(const unsigned int thetaIndex, const unsigned
   this->AddNoise(Scan->GetValue(phiIndex, thetaIndex));
 
 }
-
 
 void vtkLidarScanner::PerformScan()
 {
