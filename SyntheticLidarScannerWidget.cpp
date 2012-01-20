@@ -200,7 +200,7 @@ void SyntheticLidarScannerWidget::on_actionSavePoints_activated()
 }
 
 
-void SyntheticLidarScannerWidget::on_actionWritePTX_activated()
+void SyntheticLidarScannerWidget::on_actionSavePTX_activated()
 {
   // Set a filename to save
   QString fileName = QFileDialog::getSaveFileName(this,
@@ -258,7 +258,7 @@ void SyntheticLidarScannerWidget::btnPreview_clicked()
   this->Refresh();
 }
 
-void SyntheticLidarScannerWidget::on_actionOpenFile_activated()
+void SyntheticLidarScannerWidget::on_actionOpen_activated()
 {
   // Get a filename to open
   QString fileName = QFileDialog::getOpenFileName(this,

@@ -40,10 +40,11 @@ public slots:
   void btnScan_clicked();
   void btnPreview_clicked();
 
+  void on_actionOpen_activated();
+
   void on_actionSavePoints_activated();
   void on_actionSaveFullOutput_activated();
-  void on_actionOpenFile_activated();
-  void on_actionWritePTX_activated();
+  void on_actionSavePTX_activated();
 
   void SetScannerParameters();
 
