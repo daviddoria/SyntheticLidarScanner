@@ -27,7 +27,7 @@ class vtkRenderer;
 
 class ScannerInteractorStyle;
 
-class SyntheticLidarScannerWidget : public QWidget
+class SyntheticLidarScannerWidget : public QMainWindow
 {
   Q_OBJECT
 
@@ -40,10 +40,10 @@ public slots:
   void btnScan_clicked();
   void btnPreview_clicked();
 
-  void btnSavePoints_clicked();
-  void btnSaveFullOutput_clicked();
-  void btnOpenFile_clicked();
-  void btnWritePTX_clicked();
+  void on_actionSavePoints_activated();
+  void on_actionSaveFullOutput_activated();
+  void on_actionOpenFile_activated();
+  void on_actionWritePTX_activated();
 
   void SetScannerParameters();
 

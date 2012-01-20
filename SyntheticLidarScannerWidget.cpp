@@ -63,18 +63,12 @@ void SyntheticLidarScannerWidget::ConnectSlots()
   connect( this->ui.txtMaxPhiAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
   connect( this->ui.txtMaxPhiAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
 
-
   connect( this->ui.btnPreview, SIGNAL( clicked() ), this, SLOT(btnPreview_clicked()) );
   connect( this->ui.btnScan, SIGNAL( clicked() ), this, SLOT(btnScan_clicked()) );
-
-  connect( this->ui.btnSavePoints, SIGNAL( clicked() ), this, SLOT(btnSavePoints_clicked()) );
-  connect( this->ui.btnSaveFullOutput, SIGNAL( clicked() ), this, SLOT(btnSaveFullOutput_clicked()) );
-  connect( this->ui.btnOpenFile, SIGNAL( clicked() ), this, SLOT(btnOpenFile_clicked()) );
-  connect( this->ui.btnWritePTX, SIGNAL( clicked()), this, SLOT(btnWritePTX_clicked()) );
 }
 
 SyntheticLidarScannerWidget::SyntheticLidarScannerWidget(int numArgs, char** args, QWidget *parent)
-    : QWidget(parent)
+    : QMainWindow(parent)
 {
 
   this->argc = numArgs;
@@ -182,7 +176,7 @@ void SyntheticLidarScannerWidget::btnScan_clicked()
   this->ui.lblScanning->hide();
 }
 
-void SyntheticLidarScannerWidget::btnSavePoints_clicked()
+void SyntheticLidarScannerWidget::on_actionSavePoints_activated()
 {
   // Set a filename to save
   QString fileName = QFileDialog::getSaveFileName(this,
@@ -206,7 +200,7 @@ void SyntheticLidarScannerWidget::btnSavePoints_clicked()
 }
 
 
-void SyntheticLidarScannerWidget::btnWritePTX_clicked()
+void SyntheticLidarScannerWidget::on_actionWritePTX_activated()
 {
   // Set a filename to save
   QString fileName = QFileDialog::getSaveFileName(this,
@@ -225,7 +219,7 @@ void SyntheticLidarScannerWidget::btnWritePTX_clicked()
 
 }
 
-void SyntheticLidarScannerWidget::btnSaveFullOutput_clicked()
+void SyntheticLidarScannerWidget::on_actionSaveFullOutput_activated()
 {
   // Set a filename to save
   QString fileName = QFileDialog::getSaveFileName(this,
@@ -264,7 +258,7 @@ void SyntheticLidarScannerWidget::btnPreview_clicked()
   this->Refresh();
 }
 
-void SyntheticLidarScannerWidget::btnOpenFile_clicked()
+void SyntheticLidarScannerWidget::on_actionOpenFile_activated()
 {
   // Get a filename to open
   QString fileName = QFileDialog::getOpenFileName(this,

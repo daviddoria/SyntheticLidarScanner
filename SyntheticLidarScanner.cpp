@@ -28,4 +28,3 @@ int main(int argc, char *argv[])
   syntheticLidarScannerWidget.show();
   return app.exec();
 }
-
