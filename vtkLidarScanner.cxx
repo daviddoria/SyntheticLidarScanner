@@ -129,9 +129,9 @@ vtkLidarScanner::~vtkLidarScanner()
 {
   if(this->Scan)
     {
-    for(unsigned int i = this->Scan->GetExtent(0).GetBegin(); i <this->Scan->GetExtent(0).GetEnd(); i++)
+    for(int i = this->Scan->GetExtent(0).GetBegin(); i < this->Scan->GetExtent(0).GetEnd(); i++)
       {
-      for(unsigned int j = this->Scan->GetExtent(1).GetBegin(); j <this->Scan->GetExtent(1).GetEnd(); j++)
+      for(int j = this->Scan->GetExtent(1).GetBegin(); j < this->Scan->GetExtent(1).GetEnd(); j++)
         {
         this->Scan->GetValue(i,j)->Delete();
         }
@@ -581,8 +581,7 @@ void vtkLidarScanner::WritePTX(const std::string& filename)
     // If the point is valid, write it to the file
     if(validArray->GetValue(i))
       {
-      double p[3];
-      this->Output->GetPoint(i,coordinate);
+      this->Output->GetPoint(i, coordinate);
       fout << coordinate[0] << " " << coordinate[1] << " " << coordinate[2] << " .5 0 0 0" << endl;
       }
     else
