@@ -32,9 +32,8 @@ class SyntheticLidarScannerWidget : public QMainWindow, public Ui::SyntheticLida
   Q_OBJECT
 
 public:
-  SyntheticLidarScannerWidget(int argc, char** argv, QWidget *parent = 0 );
-  int argc;
-  char** argv;
+  SyntheticLidarScannerWidget();
+  SyntheticLidarScannerWidget(const std::string& fileName);
 
 public slots:
   void btnScan_clicked();
@@ -50,6 +49,10 @@ public slots:
 
 private:
 
+  void SharedConstructor();
+
+  void OpenFile(const std::string& fileName);
+  
   void ConnectSlots();
 
   void Refresh();

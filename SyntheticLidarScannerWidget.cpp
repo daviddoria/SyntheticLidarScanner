@@ -22,6 +22,8 @@
 
 #include "SyntheticLidarScannerWidget.h"
 
+#include "Helpers.h"
+
 #include <vtkActor.h>
 #include <vtkAxesActor.h>
 #include <vtkBoxRepresentation.h>
@@ -67,13 +69,8 @@ void SyntheticLidarScannerWidget::ConnectSlots()
   connect( this->btnScan, SIGNAL( clicked() ), this, SLOT(btnScan_clicked()) );
 }
 
-SyntheticLidarScannerWidget::SyntheticLidarScannerWidget(int numArgs, char** args, QWidget *parent)
-    : QMainWindow(parent)
+void SyntheticLidarScannerWidget::SharedConstructor()
 {
-
-  this->argc = numArgs;
-  this->argv = args;
-
   // This must be called first.
   this->setupUi(this);
 
@@ -110,6 +107,16 @@ SyntheticLidarScannerWidget::SyntheticLidarScannerWidget(int numArgs, char** arg
   this->Refresh();
 }
 
+SyntheticLidarScannerWidget::SyntheticLidarScannerWidget() : QMainWindow()
+{
+  SharedConstructor();
+}
+
+SyntheticLidarScannerWidget::SyntheticLidarScannerWidget(const std::string& fileName)
+{
+  SharedConstructor();
+  OpenFile(fileName);
+}
 
 void SyntheticLidarScannerWidget::ResetAndRefresh()
 {
@@ -160,7 +167,8 @@ void SyntheticLidarScannerWidget::btnScan_clicked()
   this->ScannerStyle->LidarScanner->Update();
 
   this->ScannerStyle->LidarScanner->GetValidOutputPoints(this->ScannerStyle->Scan);
-
+  Helpers::WritePolyData(this->ScannerStyle->Scan, "scan.vtp");
+  
   // Setup the visualization
   this->ScannerStyle->ScanMapper->SetInputConnection(this->ScannerStyle->Scan->GetProducerPort());
   this->ScannerStyle->ScanActor->SetMapper(this->ScannerStyle->ScanMapper);
@@ -258,6 +266,25 @@ void SyntheticLidarScannerWidget::btnPreview_clicked()
   this->Refresh();
 }
 
+void SyntheticLidarScannerWidget::OpenFile(const std::string& fileName)
+{
+
+  // Open the file
+  vtkSmartPointer<vtkXMLPolyDataReader> reader =
+    vtkSmartPointer<vtkXMLPolyDataReader>::New();
+  reader->SetFileName(fileName.c_str());
+  reader->Update();
+
+  // Store the data as the scene
+  this->ScannerStyle->Scene->ShallowCopy(reader->GetOutput());
+
+  this->ScannerStyle->SceneMapper->SetInputConnection(this->ScannerStyle->Scene->GetProducerPort());
+  this->ScannerStyle->SceneActor->SetMapper(this->ScannerStyle->SceneMapper);
+  this->Renderer->AddActor(this->ScannerStyle->SceneActor);
+
+  this->ResetAndRefresh();
+}
+
 void SyntheticLidarScannerWidget::on_actionOpen_activated()
 {
   // Get a filename to open
@@ -271,19 +298,6 @@ void SyntheticLidarScannerWidget::on_actionOpen_activated()
     return;
     }
 
-  // Open the file
-  vtkSmartPointer<vtkXMLPolyDataReader> reader =
-    vtkSmartPointer<vtkXMLPolyDataReader>::New();
-  reader->SetFileName(fileName.toStdString().c_str());
-  reader->Update();
-
-  // Store the data as the scene
-  this->ScannerStyle->Scene->ShallowCopy(reader->GetOutput());
-
-  this->ScannerStyle->SceneMapper->SetInputConnection(this->ScannerStyle->Scene->GetProducerPort());
-  this->ScannerStyle->SceneActor->SetMapper(this->ScannerStyle->SceneMapper);
-  this->Renderer->AddActor(this->ScannerStyle->SceneActor);
-
-  this->ResetAndRefresh();
+  OpenFile(fileName.toStdString());
 
 }

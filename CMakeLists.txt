@@ -27,7 +27,7 @@ TARGET_LINK_LIBRARIES(LidarScannerNonInteractive ${VTK_LIBRARIES} LidarScanner)
 
 # Interactive version
 SET(BuildInteractive CACHE BOOL "Build the interactive version.")
-if(BuildInteractive)
+#if(BuildInteractive)
 
   if(NOT VTK_USE_QT)
     message(FATAL_ERROR "You must compile VTK with VTK_USE_QT=ON.")
@@ -43,7 +43,8 @@ if(BuildInteractive)
     QT4_WRAP_UI(UISrcs SyntheticLidarScannerWidget.ui)
     QT4_WRAP_CPP(MOCSrcs SyntheticLidarScannerWidget.h)
 
-    ADD_EXECUTABLE(SyntheticLidarScanner SyntheticLidarScanner.cpp
+    message("Building SyntheticLidarScanner ")
+    ADD_EXECUTABLE(SyntheticLidarScanner SyntheticLidarScanner.cpp Helpers.cpp
     SyntheticLidarScannerWidget.cpp
     ScannerInteractorStyle.cxx
     ${MOCSrcs} ${UISrcs}
@@ -52,4 +53,4 @@ if(BuildInteractive)
   elseif(QT4_FOUND)
     message ( "QT4 NOT found successfully." )
   endif(QT4_FOUND)
-endif(BuildInteractive)
+#endif(BuildInteractive)

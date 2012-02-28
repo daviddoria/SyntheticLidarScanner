@@ -23,8 +23,19 @@
 int main(int argc, char *argv[])
 {
   QApplication app(argc, argv);
-  SyntheticLidarScannerWidget syntheticLidarScannerWidget(argc,argv);
 
-  syntheticLidarScannerWidget.show();
+  SyntheticLidarScannerWidget* syntheticLidarScannerWidget;
+
+  if(argc == 2)
+  {
+    std::string fileName = argv[1];
+    syntheticLidarScannerWidget = new SyntheticLidarScannerWidget(fileName);
+  }
+  else
+  {
+    syntheticLidarScannerWidget = new SyntheticLidarScannerWidget;
+  }
+  
+  syntheticLidarScannerWidget->show();
   return app.exec();
 }
