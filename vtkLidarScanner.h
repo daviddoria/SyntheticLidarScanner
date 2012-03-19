@@ -19,8 +19,9 @@
 #ifndef __vtkLidarScanner_h
 #define __vtkLidarScanner_h
 
-/*
-This Lidar scanner class models the output of the Leica HDS 3000. It acquires data in a series of vertical strips, from low to high, left to right. The output is either a pointcloud (with CreateMesh == 0) or a connected mesh (with CreateMesh == 1).
+/**
+This Lidar scanner class models the output of the Leica HDS 3000. It acquires data in a series of vertical strips, from low to high, left to right.
+The output is either a pointcloud (with CreateMesh == 0) or a connected mesh (with CreateMesh == 1).
 
 Coordinate System:
 
@@ -64,13 +65,13 @@ public:
   vtkGetMacro(NumberOfThetaPoints, unsigned int);
   vtkGetMacro(NumberOfPhiPoints, unsigned int);
 
-  // These functions expect radians
+  /** These functions expect radians */
   vtkGetMacro(MinPhiAngle, double);
   vtkGetMacro(MaxPhiAngle, double);
   vtkGetMacro(MinThetaAngle, double);
   vtkGetMacro(MaxThetaAngle, double);
 
-  // These functions expect radians
+  /** These functions expect radians */
   void SetMinPhiAngleDegrees(const double);
   void SetMaxPhiAngleDegrees(const double);
   void SetMinThetaAngleDegrees(const double);
@@ -79,7 +80,7 @@ public:
   vtkGetMacro(LOSVariance, double);
   vtkGetMacro(OrthogonalVariance, double);
 
-  ///////// Calculated Accessors /////////////////
+  /** Calculated Accessors  */
   double GetPhiStep() const;
   double GetThetaStep() const;
   double GetNumberOfTotalPoints() const;
@@ -101,8 +102,8 @@ public:
   vtkSetMacro(RepresentationLength, double);
   vtkGetMacro(RepresentationLength, double);
 
-  void SetScene(vtkSmartPointer<vtkPolyData> scene);
-  void SetTransform(vtkSmartPointer<vtkTransform> transform);
+  void SetScene(vtkPolyData* const scene);
+  void SetTransform(vtkTransform* const transform);
   vtkTransform* GetTransform();
 
   void SetThetaSpan(const double theta); // (radians)
@@ -124,7 +125,10 @@ public:
   // Outputs
   void GetValidOutputPoints(vtkPolyData* const output); //put all of the valid scene intersections into a PolyData
   void GetAllOutputPoints(vtkPolyData* const output); //put all returns (including misses) into a PolyData
-  void GetOutputMesh(vtkPolyData* const output); //put all of the valid scene intersections into a PolyData and connect them using Delaunay triangulation
+
+  /** Put all of the valid scene intersections into a PolyData and connect them using Delaunay triangulation */
+  void GetOutputMesh(vtkPolyData* const output);
+  
   vtkImageData* GetFullOutput();
   void WritePTX(const std::string& filename);
 
@@ -152,6 +156,7 @@ protected:
   std::vector<double> ThetaAngles;// a list of the theta angles
 
   vtkSmartPointer<vtkTransform> Transform; //the transformation to take the scanner from its default orientation and position to the correction orientation and position
+  vtkSmartPointer<vtkTransform> InverseTransform;
 
   bool StoreRays;
   bool CreateMesh;

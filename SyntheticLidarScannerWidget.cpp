@@ -56,17 +56,14 @@
 void SyntheticLidarScannerWidget::ConnectSlots()
 {
   // The text boxes for the angles should update the display
-  connect( this->txtMinThetaAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
-  connect( this->txtMinThetaAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
-  connect( this->txtMaxThetaAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
-  connect( this->txtMaxThetaAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
-  connect( this->txtMinPhiAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
-  connect( this->txtMinPhiAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
-  connect( this->txtMaxPhiAngle, SIGNAL( returnPressed() ), this, SLOT(btnPreview_clicked()) );
-  connect( this->txtMaxPhiAngle, SIGNAL( editingFinished()), this, SLOT(btnPreview_clicked()) );
-
-  connect( this->btnPreview, SIGNAL( clicked() ), this, SLOT(btnPreview_clicked()) );
-  connect( this->btnScan, SIGNAL( clicked() ), this, SLOT(btnScan_clicked()) );
+  connect( this->txtMinThetaAngle, SIGNAL( returnPressed() ), this, SLOT(on_btnPreview_clicked()) );
+  connect( this->txtMinThetaAngle, SIGNAL( editingFinished()), this, SLOT(on_btnPreview_clicked()) );
+  connect( this->txtMaxThetaAngle, SIGNAL( returnPressed() ), this, SLOT(on_btnPreview_clicked()) );
+  connect( this->txtMaxThetaAngle, SIGNAL( editingFinished()), this, SLOT(on_btnPreview_clicked()) );
+  connect( this->txtMinPhiAngle, SIGNAL( returnPressed() ), this, SLOT(on_btnPreview_clicked()) );
+  connect( this->txtMinPhiAngle, SIGNAL( editingFinished()), this, SLOT(on_btnPreview_clicked()) );
+  connect( this->txtMaxPhiAngle, SIGNAL( returnPressed() ), this, SLOT(on_btnPreview_clicked()) );
+  connect( this->txtMaxPhiAngle, SIGNAL( editingFinished()), this, SLOT(on_btnPreview_clicked()) );
 }
 
 void SyntheticLidarScannerWidget::SharedConstructor()
@@ -153,7 +150,7 @@ void SyntheticLidarScannerWidget::SetScannerParameters()
   this->ScannerStyle->LidarScanner->SetNumberOfPhiPoints(this->txtNumberOfPhiPoints->text().toUInt());
 }
 
-void SyntheticLidarScannerWidget::btnScan_clicked()
+void SyntheticLidarScannerWidget::on_btnScan_clicked()
 {
   // Start the progress bar
   this->progressBar->show();
@@ -167,7 +164,7 @@ void SyntheticLidarScannerWidget::btnScan_clicked()
   this->ScannerStyle->LidarScanner->Update();
 
   this->ScannerStyle->LidarScanner->GetValidOutputPoints(this->ScannerStyle->Scan);
-  Helpers::WritePolyData(this->ScannerStyle->Scan, "scan.vtp");
+  Helpers::WritePolyData(this->ScannerStyle->Scan, "scan.vtp"); // This works
   
   // Setup the visualization
   this->ScannerStyle->ScanMapper->SetInputConnection(this->ScannerStyle->Scan->GetProducerPort());
@@ -184,12 +181,47 @@ void SyntheticLidarScannerWidget::btnScan_clicked()
   this->lblScanning->hide();
 }
 
+void SyntheticLidarScannerWidget::on_actionSaveMesh_activated()
+{
+  // Set a filename to save
+  QString fileName = QFileDialog::getSaveFileName(this,
+     "Save Scan", "scan.vtp", "VTP Files (*.vtp)");
+
+  if(fileName.isEmpty())
+  {
+    return;
+  }
+  std::cout << "Saving to " << fileName.toStdString() << "..." << std::endl;
+
+  if(this->ScannerStyle->Scan)
+    {
+    vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
+    this->ScannerStyle->LidarScanner->GetOutputMesh(polydata);
+
+    vtkSmartPointer<vtkXMLPolyDataWriter> writer =
+      vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+    writer->SetInputConnection(polydata->GetProducerPort());
+    writer->SetFileName(fileName.toStdString().c_str());
+    writer->Write();
+    }
+  else
+    {
+    std::cerr << "You must scan before you can save!" << std::endl;
+    }
+
+}
+
 void SyntheticLidarScannerWidget::on_actionSavePoints_activated()
 {
   // Set a filename to save
   QString fileName = QFileDialog::getSaveFileName(this,
      tr("Save Scan"), "/home/doriad", tr("Image Files (*.vtp)"));
 
+  if(fileName.isEmpty())
+  {
+    return;
+  }
+  
   std::cout << "Saving to " << fileName.toStdString() << "..." << std::endl;
 
   if(this->ScannerStyle->Scan)
@@ -251,7 +283,7 @@ void SyntheticLidarScannerWidget::on_actionSaveFullOutput_activated()
 }
 
 
-void SyntheticLidarScannerWidget::btnPreview_clicked()
+void SyntheticLidarScannerWidget::on_btnPreview_clicked()
 {
   SetScannerParameters();
 
@@ -300,4 +332,16 @@ void SyntheticLidarScannerWidget::on_actionOpen_activated()
 
   OpenFile(fileName.toStdString());
 
+}
+
+void SyntheticLidarScannerWidget::on_btnHideBox_clicked()
+{
+  std::cout << "Hiding box..." << std::endl;
+  this->ScannerStyle->BoxWidget->EnabledOff();
+}
+
+void SyntheticLidarScannerWidget::on_btnShowBox_clicked()
+{
+  std::cout << "Hiding box..." << std::endl;
+  this->ScannerStyle->BoxWidget->EnabledOn();
 }

@@ -44,9 +44,9 @@ public:
 
   void SetDirection(double* Dir); //specify the direction of the ray
 
-  void ApplyTransform(vtkTransform* Trans); //transform the ray
+  void ApplyTransform(vtkTransform* const Trans); //transform the ray
 
-  double* GetPointAlong(const double dist); //get a point 'dist' units from the rays origin along the ray
+  void GetPointAlong(const double dist, double pointAlong[3]); //get a point 'dist' units from the rays origin along the ray
 
   bool IsInfront(double* P); //check if a point is in the halfspace "in front of" the ray origin
 

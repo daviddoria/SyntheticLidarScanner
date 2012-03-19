@@ -36,12 +36,15 @@ public:
   SyntheticLidarScannerWidget(const std::string& fileName);
 
 public slots:
-  void btnScan_clicked();
-  void btnPreview_clicked();
+  void on_btnScan_clicked();
+  void on_btnPreview_clicked();
+  void on_btnHideBox_clicked();
+  void on_btnShowBox_clicked();
 
   void on_actionOpen_activated();
 
   void on_actionSavePoints_activated();
+  void on_actionSaveMesh_activated();
   void on_actionSaveFullOutput_activated();
   void on_actionSavePTX_activated();
 

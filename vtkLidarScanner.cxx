@@ -19,6 +19,7 @@
 // STL
 #include <limits>
 #include <fstream>
+#include <stdexcept>
 
 // Custom
 #include "vtkRay.h"
@@ -84,7 +85,8 @@ vtkLidarScanner::vtkLidarScanner()
 {
   // Initialze everything to NULL/zero values
   this->Transform = vtkSmartPointer<vtkTransform>::New(); //vtkTransform is initialized to identity by default
-
+  this->InverseTransform = vtkSmartPointer<vtkTransform>::New();
+  
   this->Output = vtkSmartPointer<vtkImageData>::New();
 
   this->NumberOfThetaPoints = 0;
@@ -137,24 +139,6 @@ vtkLidarScanner::~vtkLidarScanner()
         }
       }
     }
- /*
-  this->OutputGrid->Delete();
-
-  if(this->Transform)
-    {
-    this->Transform->Delete();
-    }
-
-  if(this->Scene)
-    {
-    this->Scene->Delete();
-    }
-
-  if(this->Tree)
-    {
-    this->Tree->Delete();
-    }
-  */
 }
 
 // Convenience functions for setting values from degrees.
@@ -198,7 +182,7 @@ void vtkLidarScanner::SetPhiSpan(const double phi)  // (radians)
   // This is a convenience function that simply divides the span by two and evenly splits the span across zero
   if(fabs(phi) > vtkMath::Pi())
     {
-    std::cout << "Error: phi must be in [-pi, pi]" << std::endl;
+    throw std::runtime_error("Error: phi must be in [-pi, pi]");
     }
   else
     {
@@ -223,12 +207,12 @@ double* vtkLidarScanner::GetPosition() const
 }
 
 
-void vtkLidarScanner::SetScene(vtkSmartPointer<vtkPolyData> scene)
+void vtkLidarScanner::SetScene(vtkPolyData* const scene)
 {
   // Set the polydata that we are going to scan
   //this->Scene = scene;
 
-  std::cout << "input to SetScene has " << scene->GetNumberOfPoints() << " points." << std::endl;
+  // std::cout << "input to SetScene has " << scene->GetNumberOfPoints() << " points." << std::endl;
 
   this->Scene->ShallowCopy(scene);
 
@@ -241,7 +225,7 @@ void vtkLidarScanner::SetMinPhiAngle(const double phi)
 {
   if(fabs(phi) > vtkMath::Pi())
     {
-    std::cout << "Error: phi must be in [-pi,pi]" << std::endl;
+    throw std::runtime_error("Error: phi must be in [-pi,pi]");
     }
   else
     {
@@ -254,7 +238,7 @@ void vtkLidarScanner::SetMaxPhiAngle(const double phi)
 {
   if(fabs(phi) > vtkMath::Pi())
     {
-    std::cout << "Error: phi must be in [-pi,pi]" << std::endl;
+    throw std::runtime_error("Error: phi must be in [-pi,pi]");
     }
   else
     {
@@ -267,7 +251,7 @@ void vtkLidarScanner::SetMinThetaAngle(const double theta)
 {
   if(fabs(theta) > 2.0*vtkMath::Pi())
     {
-    std::cout << "Error: theta must be in [-2 pi, 2 pi]" << std::endl;
+    throw std::runtime_error("Error: theta must be in [-2 pi, 2 pi]");
     }
   else
     {
@@ -280,7 +264,7 @@ void vtkLidarScanner::SetMaxThetaAngle(const double theta)
 {
   if(fabs(theta) > 2.0*vtkMath::Pi())
     {
-    std::cout << "Error: theta must be in [-2 pi, 2 pi]" << std::endl;
+    throw std::runtime_error("Error: theta must be in [-2 pi, 2 pi]");
     }
   else
     {
@@ -291,9 +275,8 @@ void vtkLidarScanner::SetMaxThetaAngle(const double theta)
 
 
 //vtkCxxSetObjectMacro(vtkLidarScanner, Transform, vtkTransform);
-void vtkLidarScanner::SetTransform(vtkSmartPointer<vtkTransform> transform)
+void vtkLidarScanner::SetTransform(vtkTransform* const transform)
 {
-  //this->Transform->ShallowCopy(transform);
   this->Transform->DeepCopy(transform);
 }
 
@@ -352,7 +335,7 @@ void vtkLidarScanner::ConstructOutput()
 */
   int extent[6];
   this->Output->GetExtent(extent);
-  std::cout << "extent: " << extent[0] << " " << extent[1] << " " << extent[2] << " " << extent[3] << " " << extent[4] << " " << extent[5] << std::endl;
+  // std::cout << "extent: " << extent[0] << " " << extent[1] << " " << extent[2] << " " << extent[3] << " " << extent[4] << " " << extent[5] << std::endl;
   this->Output->SetNumberOfScalarComponents(3);
   this->Output->SetScalarTypeToUnsignedChar();
   this->Output->AllocateScalars();
@@ -437,33 +420,95 @@ void vtkLidarScanner::AcquirePoint(const unsigned int thetaIndex, const unsigned
   // The grid location must be in bounds.
   if(thetaIndex >= this->NumberOfThetaPoints || phiIndex >= this->NumberOfPhiPoints)
     {
-    std::cout << "Out of range!" << std::endl;
-    exit(-1);
+    throw std::runtime_error("Out of range!");
     }
 
   // We have computed the grid of rays (in MakeSphericalGrid()) relative to a "default" scanner (i.e. Forward = (0,1,0))
   // so we have to apply the scanner's transform to the ray before casting it
   vtkRay* ray = this->Scan->GetValue(phiIndex, thetaIndex)->GetRay();
-  ray->ApplyTransform(this->Transform);
+  
+  //std::cout << "Transform: " << *Transform << std::endl;
+  
+  // vtkSmartPointer<vtkTransform> tempTransform = vtkSmartPointer<vtkTransform>::New();
+//   InverseTransform->DeepCopy(Transform);
+//   InverseTransform->Inverse();
+//   std::cout << "inverted transform: " << *InverseTransform << std::endl;
+//   ray->ApplyTransform(InverseTransform);
+//   std::cout << "Applied transform." << std::endl;
+  
+  {
+    double origin[3];
+    double direction[3];
+    ray->GetOrigin(origin);
+    ray->GetDirection(direction);
+//     std::cout << "Ray: " << " origin: " << origin[0] << " " << origin[1] << " " << origin[2]
+//               << " direction: " << direction[0] << " " << direction[1] << " " << direction[2] << std::endl;
 
+    double* scannerOrigin = this->Transform->GetPosition();
+    // std::cout << "scannerOrigin: " << scannerOrigin[0] << " " << scannerOrigin[1] << " " << scannerOrigin[2] << std::endl;
+  }
+  
   double t;
   double x[3];
   double pcoords[3];
-  int subId;
-  vtkIdType cellId;
-  int hit = this->Tree->IntersectWithLine(ray->GetOrigin(), ray->GetPointAlong(1000.0), .01, t, x, pcoords, subId, cellId);
+  int subId = 0;
+  
 
+  // Use KDTree
+  //float tolerance = 0.0f;
+  float tolerance = .001f;
+  //float tolerance = .000001; //96 misses
+  float lineSegmentLength = 100.0f;
+
+  vtkIdType cellId = 0;
+  double pointOnRay[3];
+  ray->GetPointAlong(lineSegmentLength, pointOnRay);
+
+  std::ofstream fout("rays.txt", std::ios::app);
+
+  fout << ray->GetOrigin()[0] << " " << ray->GetOrigin()[1] << " " << ray->GetOrigin()[2] << " : "
+       << pointOnRay[0] << " " << pointOnRay[1] << " " << pointOnRay[2];
+
+  
+  // Half of the points seem to be invalid using this??
+  int hit = this->Tree->IntersectWithLine(ray->GetOrigin(), pointOnRay, tolerance, t, x, pcoords, subId, cellId);
+
+  // Do the intersection manually (not using the tree) (this crashes?)
+//   bool hit = false;
+//   // std::cout << "There are " << Scene->GetNumberOfCells() << " cells." << std::endl;
+//   for(unsigned int cellIndex = 0; cellIndex < Scene->GetNumberOfCells(); ++cellIndex)
+//   {
+//     vtkIdType intersect = Scene->GetCell(cellIndex)->IntersectWithLine(ray->GetOrigin(), pointOnRay, tolerance, t, x, pcoords, cellId);
+//     if(intersect)
+//     {
+//       hit = true;
+//       break;
+//     }
+//   }
+
+  fout << " : " << hit << std::endl;
+  fout.close();
+  
   // The ray does not intersect the mesh at all, we can stop here
-  if(!hit)
+  if(hit == 0) // The function IntersectWithLine returns 0 if there was no intersection
     {
+    std::cout << "Ray missed!" << std::endl;
+    this->Scan->GetValue(phiIndex, thetaIndex)->SetHit(false);
     return;
     }
+  else
+  {
+    //std::cout << "Point hit: " << x[0] << " " << x[1] << " " << x[2] << std::endl;
+  }
 
+  //std::cout << "Checking cell " << cellId << std::endl;
+  
   // If the cell is a triangle, we can compute it's normal.
   vtkTriangle* triangle = vtkTriangle::SafeDownCast(this->Scene->GetCell(cellId));
 
   if(triangle)
     {
+    //std::cout << "Cell is a triangle." << std::endl;
     vtkPoints* triPoints = triangle->GetPoints();
     double n[3];
     double t0[3];
@@ -478,6 +523,11 @@ void vtkLidarScanner::AcquirePoint(const unsigned int thetaIndex, const unsigned
     // Save the normal of the intersection
     this->Scan->GetValue(phiIndex, thetaIndex)->SetNormal(n);
     }
+  else
+    {
+    double n[3] = {0,0,0};
+    this->Scan->GetValue(phiIndex, thetaIndex)->SetNormal(n);
+    }
 
   // Save the intersection
   this->Scan->GetValue(phiIndex,thetaIndex)->SetCoordinate(x);
@@ -485,7 +535,7 @@ void vtkLidarScanner::AcquirePoint(const unsigned int thetaIndex, const unsigned
   // Set the flag for this point indicating that there was a valid intersection
   this->Scan->GetValue(phiIndex, thetaIndex)->SetHit(true);
 
-  this->AddNoise(Scan->GetValue(phiIndex, thetaIndex));
+  // this->AddNoise(Scan->GetValue(phiIndex, thetaIndex));
 
 }
 
@@ -495,14 +545,30 @@ void vtkLidarScanner::PerformScan()
 
   this->MakeSphericalGrid();
 
+  // Apply the transform to each ray
+  for(unsigned int theta = 0; theta < this->NumberOfThetaPoints; theta++)
+    {
+    for(unsigned int phi = 0; phi < this->NumberOfPhiPoints; phi++)
+      {
+      vtkRay* ray = this->Scan->GetValue(phi, theta)->GetRay();
+      ray->ApplyTransform(this->Transform);
+      }
+    }
+    
   // Loop through the grid and intersect each ray with the scene.
+  unsigned int numberOfMisses = 0;
   for(unsigned int theta = 0; theta < this->NumberOfThetaPoints; theta++)
     {
     for(unsigned int phi = 0; phi < this->NumberOfPhiPoints; phi++)
       {
       AcquirePoint(theta, phi);
+      if(!this->Scan->GetValue(phi, theta)->GetHit())
+        {
+        numberOfMisses++;
+        }
       }
     }
+  std::cout << "There were " << numberOfMisses << " misses." << std::endl;
 }
 
 
@@ -575,14 +641,16 @@ void vtkLidarScanner::WritePTX(const std::string& filename)
   vtkDoubleArray* coordinateArray = vtkDoubleArray::SafeDownCast(this->Output->GetPointData()->GetArray("CoordinateArray"));
   assert(coordinateArray);
 
-  double coordinate[3];
+  double gridCoordinate[3];
   for(unsigned int i = 0; i < this->NumberOfThetaPoints * this->NumberOfPhiPoints; i++)
     {
     // If the point is valid, write it to the file
     if(validArray->GetValue(i))
       {
-      this->Output->GetPoint(i, coordinate);
-      fout << coordinate[0] << " " << coordinate[1] << " " << coordinate[2] << " .5 0 0 0" << endl;
+      this->Output->GetPoint(i, gridCoordinate);
+      double pointCoordinate[3];
+      this->Scan->GetValue(gridCoordinate[0], gridCoordinate[1])->GetCoordinate(pointCoordinate);
+      fout << pointCoordinate[0] << " " << pointCoordinate[1] << " " << pointCoordinate[2] << " .5 0 0 0" << endl;
       }
     else
       {
@@ -758,7 +826,8 @@ void vtkLidarScanner::GetValidOutputPoints(vtkPolyData* const output)
           {
           // Set the next element in the geometry/topology/normal vector
           vtkRay* R = this->Scan->GetValue(phiCounter, thetaCounter)->GetRay();
-          double* p = R->GetPointAlong(1.0);
+          double p[3];
+          R->GetPointAlong(1.0, p);
           vtkIdType pid[1];
           pid[0] = Points->InsertNextPoint(p);
           Vertices->InsertNextCell(1,pid);

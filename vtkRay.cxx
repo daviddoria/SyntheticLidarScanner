@@ -32,23 +32,21 @@ void vtkRay::PrintSelf(ostream &os, vtkIndent indent)
   // Print the rays origin and direction when << is called
   os << "Origin: " << this->Origin[0] << " " << this->Origin[1] << " " << this->Origin[2] << vtkstd::endl
      << "Direction: " << this->Direction[0] << " " << this->Direction[1] << " " << this->Direction[2] << vtkstd::endl;
-	
+
 }
 
-double* vtkRay::GetPointAlong(const double dist)
+void vtkRay::GetPointAlong(const double dist, double pointAlong[3])
 {
-	// Return a point 'dist' units along the ray in the "forward" direction
-	double* newPoint = new double[3];
-  newPoint[0] = this->Origin[0] + this->Direction[0] * dist;
-  newPoint[1] = this->Origin[1] + this->Direction[1] * dist;
-  newPoint[2] = this->Origin[2] + this->Direction[2] * dist;
-	return newPoint;
+  // Return a point 'dist' units along the ray in the "forward" direction
+  pointAlong[0] = this->Origin[0] + this->Direction[0] * dist;
+  pointAlong[1] = this->Origin[1] + this->Direction[1] * dist;
+  pointAlong[2] = this->Origin[2] + this->Direction[2] * dist;
 }
 
 void vtkRay::SetDirection(double* dir)
 {
-	// Set the rays direction to the unit length Dir
-	vtkMath::Normalize(dir);
+  // Set the rays direction to the unit length Dir
+  vtkMath::Normalize(dir);
   this->Direction[0] = dir[0];
   this->Direction[1] = dir[1];
   this->Direction[2] = dir[2];
@@ -56,38 +54,41 @@ void vtkRay::SetDirection(double* dir)
 
 bool vtkRay::IsInfront(double* P)
 {
-	// Create a vector (OtherRay) from the rays origin to the query point P
+  // Create a vector (OtherRay) from the rays origin to the query point P
   vtkSmartPointer<vtkRay> otherRay = vtkSmartPointer<vtkRay>::New();
-	otherRay->SetOrigin(this->Origin);
-	double dir[3] = {P[0] - this->Origin[0], P[1] - this->Origin[1], P[2] - this->Origin[2]};
-	otherRay->SetDirection(dir);
-		
-	//if the dot product between the above computed direction and the rays direction is greater than
-	//zero, the query point is "in front of" the ray
-	double dotprod = vtkMath::Dot(this->Direction, otherRay->GetDirection());
-	
-	if(dotprod > 0.0)
-    {
-		return true;
-    }
-	else
-    {
-		return false;
-    }
-  
+  otherRay->SetOrigin(this->Origin);
+  double dir[3] = {P[0] - this->Origin[0], P[1] - this->Origin[1], P[2] - this->Origin[2]};
+  otherRay->SetDirection(dir);
+
+  //if the dot product between the above computed direction and the rays direction is greater than
+  //zero, the query point is "in front of" the ray
+  double dotprod = vtkMath::Dot(this->Direction, otherRay->GetDirection());
+
+  if(dotprod > 0.0)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+
 }
 
-void vtkRay::ApplyTransform(vtkTransform* trans)
+void vtkRay::ApplyTransform(vtkTransform* const trans)
 {
-	//transform the rays origin and a point 1 unit along the ray (p)
-	//store the direction from the transformed origin and p as the rays new direction
-	
-	double* p = this->GetPointAlong(1.0);
-	trans->TransformPoint(p, p);
-	trans->TransformPoint(this->Origin, this->Origin);
-	
-	this->Direction[0] = p[0] - this->Origin[0];
-	this->Direction[1] = p[1] - this->Origin[1];
-	this->Direction[2] = p[2] - this->Origin[2];
+  // Transform the rays origin and a point 1 unit along the ray.
+  // Store the direction from the transformed origin and p as the rays new direction
 
+  // NOTE! The point must be computed and transformed BEFORE the origin is transformed. (Since the GetPointAlong function uses values that we modify in this function).
+  double p[3];
+  this->GetPointAlong(1.0, p);
+  trans->TransformPoint(p, p);
+  trans->TransformPoint(this->Origin, this->Origin);
+
+  this->Direction[0] = p[0] - this->Origin[0];
+  this->Direction[1] = p[1] - this->Origin[1];
+  this->Direction[2] = p[2] - this->Origin[2];
+
+  vtkMath::Normalize(this->Direction);
 }
