@@ -56,14 +56,14 @@
 void SyntheticLidarScannerWidget::ConnectSlots()
 {
   // The text boxes for the angles should update the display
-  connect( this->txtMinThetaAngle, SIGNAL( returnPressed() ), this, SLOT(on_btnPreview_clicked()) );
-  connect( this->txtMinThetaAngle, SIGNAL( editingFinished()), this, SLOT(on_btnPreview_clicked()) );
-  connect( this->txtMaxThetaAngle, SIGNAL( returnPressed() ), this, SLOT(on_btnPreview_clicked()) );
-  connect( this->txtMaxThetaAngle, SIGNAL( editingFinished()), this, SLOT(on_btnPreview_clicked()) );
-  connect( this->txtMinPhiAngle, SIGNAL( returnPressed() ), this, SLOT(on_btnPreview_clicked()) );
-  connect( this->txtMinPhiAngle, SIGNAL( editingFinished()), this, SLOT(on_btnPreview_clicked()) );
-  connect( this->txtMaxPhiAngle, SIGNAL( returnPressed() ), this, SLOT(on_btnPreview_clicked()) );
-  connect( this->txtMaxPhiAngle, SIGNAL( editingFinished()), this, SLOT(on_btnPreview_clicked()) );
+  connect( this->txtMinThetaAngle, SIGNAL( returnPressed() ), this, SLOT(slot_Preview()) );
+  connect( this->txtMinThetaAngle, SIGNAL( editingFinished()), this, SLOT(slot_Preview()) );
+  connect( this->txtMaxThetaAngle, SIGNAL( returnPressed() ), this, SLOT(slot_Preview()) );
+  connect( this->txtMaxThetaAngle, SIGNAL( editingFinished()), this, SLOT(slot_Preview()) );
+  connect( this->txtMinPhiAngle, SIGNAL( returnPressed() ), this, SLOT(slot_Preview()) );
+  connect( this->txtMinPhiAngle, SIGNAL( editingFinished()), this, SLOT(slot_Preview()) );
+  connect( this->txtMaxPhiAngle, SIGNAL( returnPressed() ), this, SLOT(slot_Preview()) );
+  connect( this->txtMaxPhiAngle, SIGNAL( editingFinished()), this, SLOT(slot_Preview()) );
 }
 
 void SyntheticLidarScannerWidget::SharedConstructor()
@@ -160,14 +160,14 @@ void SyntheticLidarScannerWidget::on_btnScan_clicked()
   SetScannerParameters();
 
   // Perform the scan
-  this->ScannerStyle->LidarScanner->SetInputConnection(this->ScannerStyle->Scene->GetProducerPort());
+  this->ScannerStyle->LidarScanner->SetInputData(this->ScannerStyle->Scene);
   this->ScannerStyle->LidarScanner->Update();
 
   this->ScannerStyle->LidarScanner->GetValidOutputPoints(this->ScannerStyle->Scan);
   Helpers::WritePolyData(this->ScannerStyle->Scan, "scan.vtp"); // This works
   
   // Setup the visualization
-  this->ScannerStyle->ScanMapper->SetInputConnection(this->ScannerStyle->Scan->GetProducerPort());
+  this->ScannerStyle->ScanMapper->SetInputData(this->ScannerStyle->Scan);
   this->ScannerStyle->ScanActor->SetMapper(this->ScannerStyle->ScanMapper);
   this->ScannerStyle->ScanActor->GetProperty()->SetPointSize(4);
   this->ScannerStyle->ScanActor->GetProperty()->SetColor(1,0,0);
@@ -200,7 +200,7 @@ void SyntheticLidarScannerWidget::on_actionSaveMesh_activated()
 
     vtkSmartPointer<vtkXMLPolyDataWriter> writer =
       vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-    writer->SetInputConnection(polydata->GetProducerPort());
+    writer->SetInputData(polydata);
     writer->SetFileName(fileName.toStdString().c_str());
     writer->Write();
     }
@@ -228,7 +228,7 @@ void SyntheticLidarScannerWidget::on_actionSavePoints_activated()
     {
     vtkSmartPointer<vtkXMLPolyDataWriter> writer =
       vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-    writer->SetInputConnection(this->ScannerStyle->Scan->GetProducerPort());
+    writer->SetInputData(this->ScannerStyle->Scan);
     writer->SetFileName(fileName.toStdString().c_str());
     writer->Write();
     }
@@ -272,7 +272,7 @@ void SyntheticLidarScannerWidget::on_actionSaveFullOutput_activated()
     {
     vtkSmartPointer<vtkXMLImageDataWriter> writer =
       vtkSmartPointer<vtkXMLImageDataWriter>::New();
-    writer->SetInputConnection(fullOutput->GetProducerPort());
+    writer->SetInputData(fullOutput);
     writer->SetFileName(fileName.toStdString().c_str());
     writer->Write();
     }
@@ -283,12 +283,12 @@ void SyntheticLidarScannerWidget::on_actionSaveFullOutput_activated()
 }
 
 
-void SyntheticLidarScannerWidget::on_btnPreview_clicked()
+void SyntheticLidarScannerWidget::slot_Preview()
 {
   SetScannerParameters();
 
   this->ScannerStyle->CreateRepresentation();
-  this->ScannerStyle->LidarScannerMapper->SetInputConnection(this->ScannerStyle->LidarScannerRepresentation->GetProducerPort());
+  this->ScannerStyle->LidarScannerMapper->SetInputData(this->ScannerStyle->LidarScannerRepresentation);
   this->ScannerStyle->LidarScannerActor->SetMapper(this->ScannerStyle->LidarScannerMapper);
   this->ScannerStyle->LidarScannerActor->GetProperty()->SetOpacity(.5);
   this->ScannerStyle->LidarScannerActor->GetProperty()->SetColor(224./255., 176./255., 1);
@@ -310,7 +310,7 @@ void SyntheticLidarScannerWidget::OpenFile(const std::string& fileName)
   // Store the data as the scene
   this->ScannerStyle->Scene->ShallowCopy(reader->GetOutput());
 
-  this->ScannerStyle->SceneMapper->SetInputConnection(this->ScannerStyle->Scene->GetProducerPort());
+  this->ScannerStyle->SceneMapper->SetInputData(this->ScannerStyle->Scene);
   this->ScannerStyle->SceneActor->SetMapper(this->ScannerStyle->SceneMapper);
   this->Renderer->AddActor(this->ScannerStyle->SceneActor);
 

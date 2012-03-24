@@ -37,7 +37,7 @@ public:
 
 public slots:
   void on_btnScan_clicked();
-  void on_btnPreview_clicked();
+  void slot_Preview();
   void on_btnHideBox_clicked();
   void on_btnShowBox_clicked();
 

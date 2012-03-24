@@ -315,7 +315,7 @@ int vtkLidarScanner::RequestData(vtkInformation *vtkNotUsed(request),
 
   output->ShallowCopy(this->Output);
   //output->SetUpdateExtent(output->GetExtent());
-  output->SetWholeExtent(output->GetExtent());
+  //output->SetWholeExtent(output->GetExtent());
 
   return 1;
 }
@@ -336,9 +336,10 @@ void vtkLidarScanner::ConstructOutput()
   int extent[6];
   this->Output->GetExtent(extent);
   // std::cout << "extent: " << extent[0] << " " << extent[1] << " " << extent[2] << " " << extent[3] << " " << extent[4] << " " << extent[5] << std::endl;
-  this->Output->SetNumberOfScalarComponents(3);
-  this->Output->SetScalarTypeToUnsignedChar();
-  this->Output->AllocateScalars();
+  //this->Output->SetNumberOfScalarComponents(3);
+  //this->Output->SetScalarTypeToUnsignedChar();
+  //this->Output->AllocateScalars();
+  this->Output->AllocateScalars(VTK_UNSIGNED_CHAR,3);
 
   vtkSmartPointer<vtkDoubleArray> coordinateArray =
     vtkSmartPointer<vtkDoubleArray>::New();
@@ -696,7 +697,7 @@ void vtkLidarScanner::GetOutputMesh(vtkPolyData* const output)
 
   // Triangulate the grid points
   vtkSmartPointer<vtkDelaunay2D> delaunay = vtkSmartPointer<vtkDelaunay2D>::New();
-  delaunay->SetInput(polydata2d);
+  delaunay->SetInputData(polydata2d);
   delaunay->Update();
 
   // Get the resulting triangles from the triangulation
@@ -897,7 +898,7 @@ void vtkLidarScanner::GetAllOutputPoints(vtkPolyData* const output)
 
   vtkSmartPointer<vtkVertexGlyphFilter> vertexFilter =
     vtkSmartPointer<vtkVertexGlyphFilter>::New();
-  vertexFilter->SetInputConnection(polydata->GetProducerPort());
+  vertexFilter->SetInputData(polydata);
   vertexFilter->Update();
 
   // Save these arrays in the polydata
@@ -960,7 +961,7 @@ void vtkLidarScanner::WriteScanner(const std::string &filename) const
 
   vtkSmartPointer<vtkTransformPolyDataFilter> translateFilter =
     vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-  translateFilter->SetInput(poly);
+  translateFilter->SetInputData(poly);
   translateFilter->SetTransform(this->Transform);
   translateFilter->Update();
 
@@ -969,7 +970,7 @@ void vtkLidarScanner::WriteScanner(const std::string &filename) const
   vtkSmartPointer<vtkXMLPolyDataWriter> writer =
     vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName(filename.c_str());
-  writer->SetInput(transformed);
+  writer->SetInputData(transformed);
   writer->Write();
 
 }
@@ -1187,7 +1188,7 @@ void vtkLidarScanner::CreateRepresentation(vtkPolyData* const representation)
   vtkSmartPointer<vtkTransformPolyDataFilter> scannerTransformFilter =
     vtkSmartPointer<vtkTransformPolyDataFilter>::New();
   scannerTransformFilter->SetTransform(this->Transform);
-  scannerTransformFilter->SetInputConnection(pd->GetProducerPort());
+  scannerTransformFilter->SetInputData(pd);
   scannerTransformFilter->Update();
 
   representation->ShallowCopy(scannerTransformFilter->GetOutput());

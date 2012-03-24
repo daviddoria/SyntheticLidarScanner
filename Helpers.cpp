@@ -6,7 +6,7 @@ namespace Helpers
   {
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName(fileName.c_str());
-  writer->SetInputConnection(polydata->GetProducerPort());
+  writer->SetInputData(polydata);
   writer->Write();
   }
 }
