@@ -30,8 +30,8 @@ void vtkRay::PrintSelf(ostream &os, vtkIndent indent)
   this->Superclass::PrintSelf(os,indent);
   
   // Print the rays origin and direction when << is called
-  os << "Origin: " << this->Origin[0] << " " << this->Origin[1] << " " << this->Origin[2] << vtkstd::endl
-     << "Direction: " << this->Direction[0] << " " << this->Direction[1] << " " << this->Direction[2] << vtkstd::endl;
+  os << "Origin: " << this->Origin[0] << " " << this->Origin[1] << " " << this->Origin[2] << std::endl
+     << "Direction: " << this->Direction[0] << " " << this->Direction[1] << " " << this->Direction[2] << std::endl;
 
 }
 

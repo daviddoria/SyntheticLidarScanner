@@ -69,13 +69,13 @@ void vtkLidarPoint::PrintSelf(ostream &os, vtkIndent indent)
 	//if the LidarPoint is valid, print its information
 	if(this->Hit)
 	  {
-		os << "Coordinate: " << Coordinate[0] << " " << Coordinate[1] << " " << Coordinate[2] << vtkstd::endl
-			<< "Ray: " << *Ray << vtkstd::endl
-			<< "Normal: " << Normal[0] << " " << Normal[1] << " " << Normal[2] << vtkstd::endl;
+                os << "Coordinate: " << Coordinate[0] << " " << Coordinate[1] << " " << Coordinate[2] << std::endl
+                        << "Ray: " << *Ray << std::endl
+                        << "Normal: " << Normal[0] << " " << Normal[1] << " " << Normal[2] << std::endl;
 	  }
 	else
 	  {
-		os << "Invalid!" << vtkstd::endl;
+                os << "Invalid!" << std::endl;
 	  }
 
 }

@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
   std::cout << "OutputFilename: " << outputFilename << std::endl;
 
   // Convert string to bool
-  vtkstd::stringstream ssCreateMesh(strCreateMesh);
+  std::stringstream ssCreateMesh(strCreateMesh);
   bool createMesh;
   ssCreateMesh >> createMesh;
 
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
   ssThetaSpan >> thetaSpan;
   std::cout << "Theta span: " << thetaSpan << std::endl;
 
-  vtkstd::stringstream ssPhiSpan(strPhiSpan);
+  std::stringstream ssPhiSpan(strPhiSpan);
   ssPhiSpan >> phiSpan;
   std::cout << "Phi span: " << phiSpan << std::endl;
 
