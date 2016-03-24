@@ -18,7 +18,7 @@
 
 /*
 example parameters:
-./PerformScan Sphere.vtp Sphere_latest.vtp 1 0 -2 0 0 0 0 2 3 .3 .3 1
+LidarScannerNonInteractive data/sphere_origin.vtp output.vti 1 5 0 0 0 0 -90 100 100 .3 .3 1
 */
 
 #include <vector>
@@ -29,8 +29,10 @@ example parameters:
 
 #include "vtkSmartPointer.h"
 #include "vtkMath.h"
+#include "vtkImageData.h"
 #include "vtkPolyData.h"
 #include "vtkXMLPolyDataReader.h"
+#include "vtkXMLImageDataWriter.h"
 #include "vtkXMLPolyDataWriter.h"
 #include "vtkTransform.h"
 
@@ -39,13 +41,14 @@ int main(int argc, char* argv[])
   if(argc != 15)
   {
     std::cout << "Incorrect arguments! Required args:" << std::endl
-            << "InputFilename OutputFilename CreateMesh? Tx Ty Tz Rx Ry Rz (R in degrees - dictated by VTK) NumThetaPoints NumPhiPoints ThetaSpan(radians) PhiSpan(radians) StoreRays? " << std::endl;
+            << "InputFilename OutputPrefix CreateMesh? Tx Ty Tz Rx Ry Rz (R in degrees - dictated by VTK) "
+               "NumThetaPoints NumPhiPoints ThetaSpan(radians) PhiSpan(radians) StoreRays? " << std::endl;
     return EXIT_FAILURE;
   }
 
   // Get the input/output filenames from the command line
   std::string inputFilename = argv[1];
-  std::string outputFilename = argv[2];
+  std::string outputPrefix = argv[2];
   std::string strCreateMesh = argv[3];
   std::string strTx = argv[4];
   std::string strTy = argv[5];
@@ -60,7 +63,7 @@ int main(int argc, char* argv[])
   std::string strStoreRays = argv[14];
 
   std::cout << "InputFilename: " << inputFilename << std::endl;
-  std::cout << "OutputFilename: " << outputFilename << std::endl;
+  std::cout << "OutputPrefix: " << outputPrefix << std::endl;
 
   // Convert string to bool
   std::stringstream ssCreateMesh(strCreateMesh);
@@ -167,11 +170,30 @@ int main(int argc, char* argv[])
   scanner->Update();
 
   // Create a writer and write the output vtp file
-  vtkSmartPointer<vtkXMLPolyDataWriter> writer = 
-    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-  writer->SetFileName(outputFilename.c_str());
-  writer->SetInputConnection(scanner->GetOutputPort());
+  vtkSmartPointer<vtkXMLImageDataWriter> writer =
+    vtkSmartPointer<vtkXMLImageDataWriter>::New();
+  writer->SetFileName((outputPrefix + ".vti").c_str());
+  writer->SetInputData(scanner->GetOutput());
   writer->Write();
+
+  // Create a writer and write the output vtp file
+  if(createMesh) {
+      vtkSmartPointer<vtkPolyData> outputMesh = vtkSmartPointer<vtkPolyData>::New();
+      scanner->GetOutputMesh(outputMesh);
+      vtkSmartPointer<vtkXMLPolyDataWriter> writer =
+        vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+      writer->SetFileName((outputPrefix + ".vtp").c_str());
+      writer->SetInputData(outputMesh);
+      writer->Write();
+  }
+
+  vtkSmartPointer<vtkPolyData> scannerRepresentation = vtkSmartPointer<vtkPolyData>::New();
+  scanner->CreateRepresentation(scannerRepresentation);
+  vtkSmartPointer<vtkXMLPolyDataWriter> scannerWriter =
+    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+  scannerWriter->SetFileName("scanner.vtp");
+  scannerWriter->SetInputData(scannerRepresentation);
+  scannerWriter->Write();
 
   return EXIT_SUCCESS;
 }
